@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="google-site-verification" content="j9HTkRmcgC7YMr2kNlRSikoFh3-uMfjxyV1QIDjywOM" />
+  
+  <meta charset="utf-8">
+  <meta name="description"
+        content="MDM-Prime">
+  <meta name="keywords" content="Text Generation, Discrete Diffusion, Masked Diffusion Models">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/PM.png" type="image/x-icon">
+  <link rel="stylesheet" href="./static/css/custumize.css">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$','$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true,
+        tags: 'ams',
+        macros: {
+          RR: "\\mathbb{R}",
+          EE: "\\mathbb{E}",
+          vx: "\\boldsymbol{x}",
+          vy: "\\boldsymbol{y}",
+          XX: "\\mathcal{X}",
+          YY: "\\mathcal{Y}",
+          VV: "\\mathcal{V}",
+        }
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  
+    window.addEventListener('load', (event) => {
+        document.querySelectorAll("mjx-container").forEach(function(x){
+          x.parentElement.classList += 'has-jax'})
+      });
+  </script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Beyond Masked and Unmasked:<br> 
+            Discrete Diffusion Models via Partial Masking</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://chen-hao-chao.github.io/">Chen-Hao Chao</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://j3soon.github.io/">Wei-Fang Sun</a><sup>2</sup>,</span>
+            <span class="author-block">
+              <a href="https://www.linkedin.com/in/hanwen-liang-967241263/">Hanwen Liang</a><sup>1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://elsalab.ai/about">Chun-Yi Lee</a><sup>3</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.cs.toronto.edu/~rahulgk/">Rahul G. Krishnan</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup> University of Toronto, Vector Institute,</span></br>
+            <span class="author-block"><sup>2</sup> NVIDIA AI Technology Center,</span></br>
+            <span class="author-block"><sup>3</sup> National Taiwan University</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2505.18495"
+                   class="external-link button is-normal is-rounded is-dark" style="text-decoration: none;">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Hugginface Link. -->
+              <span class="link-block">
+                <a href="https://huggingface.co/chen-hao-chao/mdm-prime"
+                   class="external-link button is-normal is-rounded is-dark" style="text-decoration: none;">
+                  <span class="icon">
+                    <img src="./static/images/hug.png" class="center"/>
+                  </span>
+                  <span>huggingface</span>
+                </a>
+              </span>
+              <!-- Video Link. -->
+              <!-- <span class="link-block">
+                <a href="https://www.youtube.com/watch?v=3IPZhTumzM0"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
+                </a>
+              </span> -->
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/chen-hao-chao/mdm-prime"
+                   class="external-link button is-normal is-rounded is-dark" style="text-decoration: none;" >
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>github</span>
+                  </a>
+              </span>
+            </div>
+          </div>
+
+          <div class="column has-text-centered">
+            <div style="display: inline-flex; align-items: top; gap: 8px; text-align: left;">
+              <span>&#9654; <b>Benchmark:</b></span>
+              <div>
+                <a href="https://paperswithcode.com/sota/language-modelling-on-openwebtext?p=beyond-masked-and-unmasked-discrete-diffusion">
+                  <img style="height: 24px;" src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/language-modelling-on-openwebtext" alt="MDM-Prime on Paper with Code"/>
+                </a><br>
+                <a style="line-height: 1.75;" href="https://paperswithcode.com/sota/image-generation-on-cifar-10?p=beyond-masked-and-unmasked-discrete-diffusion">
+                  <img style="height: 24px;" src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-cifar-10" alt="MDM-Prime on Paper with Code"/>
+                </a><br>
+                <a style="line-height: 1.75;" href="https://paperswithcode.com/sota/image-generation-on-imagenet-32x32?p=beyond-masked-and-unmasked-discrete-diffusion">
+                  <img style="height: 24px;" src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-imagenet-32x32" alt="MDM-Prime on Paper with Code"/>
+                </a>
+              </div>
+            </div>
+            </br></br>
+            &#9654 <b>Keywords: </b>
+              <div class="w3-tag w3-round w3-blue w3-border w3-border-white">
+                Text Generation
+              </div><div class="w3-tag w3-round w3-blue w3-border w3-border-white">
+                Discrete Diffusion
+              </div><div class="w3-tag w3-round w3-blue w3-border w3-border-white">
+                Masked Diffusion Models
+              </div>
+            <!-- <div class="w3-bar w3-border w3-light-grey" style="height:10px; visibility:hidden;"></div>
+            &#9654 <b>Venue: </b>
+            <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+              Conference on Neural Information Processing Systems (NeurIPS 2023)
+            </div> -->
+        </div><br></br>
+        <div class="w3-bar w3-border w3-light-grey"></div>
+      </div>
+    </div>
+  </div>
+  <div class="container is-max-desktop" >
+    <!-- Abstract. -->
+    <!-- <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified scroll-wrapper">
+          Masked diffusion models (MDM) are powerful generative models for discrete data 
+          that generate samples by progressively unmasking tokens in a sequence. Each 
+          token can take one of two states: masked or unmasked. We observe that token 
+          sequences often remain unchanged between consecutive sampling steps; consequently, 
+          the model repeatedly processes identical inputs, leading to redundant computation. 
+          To address this inefficiency, we propose the Partial masking scheme (Prime), which 
+          augments MDM by allowing tokens to take intermediate states interpolated between 
+          the masked and unmasked states. This design enables the model to make predictions 
+          based on partially observed token information, and facilitates a fine-grained denoising 
+          process. We derive a variational training objective and introduce a simple architectural 
+          design to accommodate intermediate-state inputs. Our method demonstrates superior 
+          performance across a diverse set of generative tasks. On text data, 
+          it achieves a perplexity of 15.36 on OpenWebText, outperforming previous MDM 
+          (21.52), autoregressive models (17.54), and their hybrid variants (17.58), 
+          without relying on an autoregressive formulation. On image data, it attains 
+          competitive FID scores of 3.26 on CIFAR-10 and 6.98 on ImageNet-32, comparable 
+          to leading continuous generative models.
+        </div>
+      </div>
+    </div> -->
+    <!--/ Abstract. -->
+
+    <!-- Paper video. -->
+    <!-- <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Video</h2>
+        <div class="publication-video">
+          <iframe src="https://www.youtube.com/embed/3IPZhTumzM0"
+                  frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div></br> -->
+    <!--/ Paper video. -->
+    <!-- <div class="w3-bar w3-border w3-light-grey"></div> -->
+  </div>
+</section>
+
+
+<!-- <section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Overview</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p>This blog post offers an introduction to the proposed MDM-Prime method. 
+          We begin with an overview of the current limitations of MDM.
+          Then, we explore a solution based on the Partial masking scheme (Prime).
+          Next, we elaborate on the implementation of MDM-Prime.
+          Finally, we present experimental results to demonstrate the effectiveness of MDM-Prime.</p>
+      </div>
+    </div>
+</section> -->
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">TL;DR</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p>The work proposes <strong>MDM-Prime</strong>, an enhanced masked diffusion model (MDM) incorporating a <strong><u>P</u>a<u>r</u>t<u>i</u>al <u>m</u>asking schem<u>e</u> (Prime)</strong>
+          that introduces intermediate token states between masked and unmasked representations. 
+          By enabling a fine-grained denoising process and improving model utilization, MDM-Prime achieves superior performance 
+          on both text (perplexity 15.36 on OpenWebText) and image generation (FID 3.26 on CIFAR-10; 6.98 on ImageNet-32), 
+          outperforming prior MDM and autoregressive models.</p>
+      </div><br>
+    </div>
+    <p id="title" class="has-text-centered"><img src="./static/images/title.png" style="width:60%;"/><br><br><br><br><br><br>
+      <div class="w3-bar w3-border w3-light-grey"></div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Introduction</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        
+        <p>The study of discrete data generation has been largely shaped by <strong>autoregressive models (ARM)</strong>, 
+          which capture the distribution of sequence data by factorizing it according to a prespecified left-to-right order. Recently, 
+          promising results from <a href="#Ref1">[1,2]</a> have demonstrated that order-agnostic models, such as <strong>masked diffusion models (MDM)</strong> 
+          (e.g., <a href="#Ref1">[1-4]</a>), can be effectively extended to large-scale generation tasks, opening a new venue for discrete generative modeling.</p>
+        <br>
+        <p id="Fig1" class="has-text-centered" style="font-style: italic;"><img src="./static/images/prime_animation.gif" style="width:100%; border: 2px solid rgb(216, 216, 216);"/></br>
+          <b>Figure 1.</b> An illustrative example of (a) MDM and (b) MDM-Prime. Each token and its corresponding sub-token 
+          sequence (constructed via base-$b$ encoding) can take one of three states: <i>unmasked</i>, <i>masked</i>, or 
+          <i>intermediate</i>. This example contains $C = 4$ possible token classes, labeled as `bird’, `cat’, `dog’, and `frog’. 
+          $\ell = 2$ indicates that each token is represented using two sub-tokens, and $b = \sqrt[\ell]{C} = 2$ denotes the number 
+          of classes per sub-token. The symbol $\texttt{m}$ represents a masked token or a masked sub-token. The bottom-right sections 
+          of (a) and (b) illustrate the state transition trees. MDM-Prime supports transitions through intermediate states while 
+          retaining the ability to directly reach unmasked states. The bottom-left portions depict the sampling process for a 
+          token sequence of length $L = 4$.</p>
+        <br>
+
+        <div class="columns is-mobile is-centered">
+          <div class="column is-three-fifths">
+            <p>&#9654<b> Inefficiency of MDM:</b> MDM are latent-variable generative models that introduce noise by progressively masking tokens within 
+              a sequence over time. During the reverse diffusion process, masked tokens are incrementally unmasked according to a predefined 
+              ratio. Each token takes one of two states, <strong><i>masked</i> or <i>unmasked</i></strong>. This binary representation introduces an 
+              inefficiency; the entire sequence often remains unchanged across consecutive sampling steps, causing the model to repeatedly 
+              process the same input. This phenomenon is illustrated in the green curve in <a href="#Fig2">Fig. 2</a>, which quantifies 
+              the number of such <strong><i>idle steps</i></strong> by simulating the reverse diffusion process of an MDM <a href="#Ref3">[3]</a>. 
+              The figure shows that 37% of the 1,024 steps produce no update to the sequence during the reverse diffusion process. This 
+              inefficiency motivates our investigation of redefining the diffusion process to transform these idle steps into informative 
+              updates for improving the utilization of the model during generation.</p>
+              <p style="text-align-last: justify;">&#9654<b> Prime as A Solution:</b> We propose a simple yet effective solution that allows each token to take an <strong><i>intermediate</i> state</strong>, 
+                which represents the</p>
+          </div>
+          <div class="column is-two-fifths">
+            <p id="Fig2" class="has-text-centered" style="font-style: italic;"><img src="./static/images/empty_step.png" style="width:250pt; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+              <b>Figure 2.</b> Number of idle steps during the reverse diffusion processes of MDM and MDM-Prime. 
+              The results are averaged over ten runs. $\ell$ is the sub-token sequence length.
+            </p>    
+          </div>
+        </div>
+        <p style="display: block; margin-top: -17pt;">interpolation between the masked and unmasked states, in the diffusion process. We refer to this method as <strong>the <u>P</u>a<u>r</u>t<u>i</u>al <u>m</u>asking schem<u>e</u> (Prime)</strong>, 
+          and denote MDM augmented with Prime as MDM-Prime. Prime represents each token as a sequence of sub-tokens 
+          using a <strong>base-$b$ encoding</strong>, with masking performed at the sub-token level. Since sub-tokens can be masked 
+          independently during the forward diffusion process, this method introduces intermediate states that 
+          partially reveal token information. An illustrative example is shown in the top of <a href="#Fig1">Fig. 1</a>, 
+          where unmasked states `0-3' are first encoded as `00-11', and the intermediate states are obtained by 
+          masking one of the sub-tokens in the sub-token sequence. The intermediate states enable MDM-Prime to perform 
+          a <strong>fine-grained denoising process</strong>. For example, as illustrated in the `State Transition Tree' of 
+          <a href="#Fig1">Fig. 1</a> (b), a four-choice prediction can be decomposed into two binary decisions during 
+          the sampling process (e.g., $\texttt{mm} \to \texttt{m}1 \to 11$). Compared to standard MDM transitions 
+          (i.e., <a href="#Fig1">Fig. 1</a> (a)), MDM-Prime is capable of making predictions based on partially observed 
+          token information while deferring the final token revelation until later sampling steps. With its ability to 
+          transition through intermediate states, MDM-Prime demonstrates <strong>improved model utilization</strong> during sampling, as 
+          reflected in the reduced number of idle steps in <a href="#Fig2">Fig. 2</a> (i.e., the purple curves). 
+          This in turn leads to <strong>enhanced performance</strong>, as later presented in the experiment section. The contributions 
+          of this work are as follows:</p>
+
+          <ul>
+            <li><strong>(Objective)</strong> We propose MDM-Prime, a generalized MDM framework that enables intermediate token transitions. This framework can be optimized through a variational upper bound, which approximates the negative log-likelihood.</li>
+            <li><strong>(Architecture)</strong> We present a simple implementation of MDM-Prime built upon the standard MDM architecture. Our design requires only minor modifications to the input embedding layer of the standard MDM.</li>
+            <li><strong>(Performance)</strong> We demonstrate that MDM-Prime achieves superior performance on both image and text generation tasks. On OpenWebText (OWT), MDM-Prime attains an evaluation perplexity of 15.36, 
+              outperforming ARM (17.54), MDM (21.52), and their hybrid variants (17.58). To the best of our knowledge, this is the <strong>first MDM-based approach to surpass ARM</strong> without relying on the autoregressive 
+              formulation. Furthermore, MDM-Prime achieves FID scores of 3.26 on CIFAR-10 and 6.98 on ImageNet-32, showing competitive performance comparable to leading 
+              continuous generative modeling methods.</li>
+          </ul>
+      </div>
+    </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Background</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p>This section provides background on the forward and reverse processes of MDM.</p>
+        
+        <br>
+        <p id="Fig3" class="has-text-centered" style="font-style: italic;"><img src="./static/images/diffusion_animation.gif" style="width:100%; border: 2px solid rgb(216, 216, 216);"/></br>
+          <b>Figure 3.</b> An illustrative example of the forward and reverse masked diffusion processes.</p>
+        <br>
+
+        <p>&#9654<b> Notations:</b></p><table style="width:100%; border-collapse: collapse;">
+          <tr>
+            <th style="text-align: left;">Symbol</th>
+            <th style="text-align: left;">Description</th>
+            <th style="text-align: left;">Symbol</th>
+            <th style="text-align: left;">Description</th>
+          </tr>
+          <tr>
+            <td>$L$</td>
+            <td>token sequence length</td>
+            <td>$C$</td>
+            <td>number of classes a token can take</td>
+          </tr>
+          <tr>
+            <td>$\XX$</td>
+            <td>a set of tokens: $\{0,\cdots,C-1\}$</td>
+            <td>$\tilde{\XX}$</td>
+            <td>an augmented set of tokens: $\XX \cup \{\texttt{m}\}$</td>
+          </tr>
+          <tr>
+            <td>$\vx_0$</td>
+            <td>a sequence of tokens ($\vx_0\in \XX^L$)</td>
+            <td>$\vx_t$</td>
+            <td>a sequence of noised tokens ($\vx_t \in \tilde{\XX}^L$)</td>
+          </tr>
+          <tr>
+            <td>$\delta_{x'}(x)$</td>
+            <td>the Kronecker delta function (equals $1$ only if $x = x'$)</td>
+            <td>$t,s$</td>
+            <td>continuous time variables ($t,s\in [0,1]$)</td>
+          </tr>
+        </table><br>
+        
+        <h4 class="title">Foward Diffusion Process</h4>
+        <p>The forward diffusion process is performed through an element-wise 
+          conditional sampler $q(\vx_{t}|\vx_0)=\prod_{i=1}^L q(x_{t}^i|x^i_0)$ constructed by interpolating between 
+          $\delta_{\texttt{m}}(\cdot)$ and $\delta_{x_0^i}(\cdot)$, defined as follows: <a href="#Ref3">[3,4]</a></p>
+        <p class="has-text-centered">$$
+          \begin{equation}
+          \label{eq:kernel_t0}
+          q(x^i_{t}|x^i_0)= (1-\alpha_t)\delta_{\texttt{m}} (x^i_{t})+\alpha_t \delta_{x^i_0}(x^i_{t}),
+          \end{equation}
+        $$</p>
+        <p>where $\alpha_t \in [0,1]$ is a strictly decreasing scheduling function with boundary conditions 
+          $\alpha_0 \approx 1$ and $\alpha_1 \approx 0$. Intuitively, each perturbed token $x_t^i$ retains the original
+          value $x_0^i$ with probability $\alpha_t$, and is replaced by $\texttt{m}$ with probability $1-\alpha_t$. 
+          At time $t=1$, the latent variable $\vx_1=[\texttt{m},\cdots,\texttt{m}]$ consists entirely of masked tokens. 
+          An illustrative example of this process is shown in <a href="#Fig3">Fig. 3</a>.</p>
+        <br>
+        <h4 class="title">Reverse Diffusion Process</h4>
+        <p>Let $s$ and $t$ be two time variables that satisfy $0 \leq s < t \leq 1$.
+          The reverse diffusion process is performed by iterating through $p(\vx_{s}|\vx_t)$, starting from $\vx_1$. 
+          The distribution $p(\vx_{s}|\vx_t)$ can be derived using $q(\vx_{t}|\vx_{s})$ and 
+          $q(\vx_{s}|\vx_{t},\vx_{0})$. In particular, $q(\vx_{t}|\vx_{s})=\prod_{i=1}^L q(x_{t}^i|x^i_s)$ 
+          is defined to be <i>absorbing</i> <a href="#Ref5">[5]</a> on the masked state, and is derived from Eq. (<a style="color: blue;">\ref{eq:kernel_t0}</a>) as follows:</p>
+        <p class="has-text-centered">$$
+          \begin{equation}
+          \label{eq:kernel_ts}
+          \begin{aligned}
+              q(x^i_t|x^i_{s})=\begin{cases}
+              \frac{\alpha_{s}-\alpha_t}{\alpha_{s}} \delta_{\texttt{m}}(x^i_{t})+\frac{\alpha_t}{\alpha_{s}}\delta_{x^i_{s}}(x^i_{t})& \text{if }x^i_s \in \XX,\\
+              \delta_{x^i_s}(x^i_{t}) & \text{if } x^i_s = \texttt{m}.  
+              \end{cases}
+          \end{aligned}
+          \end{equation}
+        $$</p> 
+        <p>Based on Eqs. (<a style="color: blue;">\ref{eq:kernel_t0}</a>) and (<a style="color: blue;">\ref{eq:kernel_ts}</a>), 
+          the posterior distribution $q(\vx_{s}|\vx_{t},\vx_{0})=\prod_{i=1}^L q(x^i_{s}|x^i_{t},x^i_{0})$ can be derived using Bayes’ 
+          rule, and is expressed as <a href="#Ref3">[3,4]</a>:</p>
+        <p class="has-text-centered">$$
+          \begin{equation}
+          \label{eq:kernel_ts0}
+          \begin{aligned}
+              q(x^i_{s}|x^i_{t},x^i_{0})= \begin{cases}
+                \delta_{x^i_t}(x^i_{s}) & \text{if } x^i_t \in \XX,\\
+                \frac{1-\alpha_{s}}{1-\alpha_t}\delta_{\texttt{m}}(x^i_{s})+\frac{\alpha_{s}-\alpha_{t}}{1-\alpha_t} \delta_{x^i_0}(x^i_{s})& \text{if }x^i_t = \texttt{m}.
+              \end{cases}    
+          \end{aligned}
+          \end{equation}
+        $$</p>
+        <p>Since $p(\vx_{s}|\vx_t)=\EE_{p(\vx_0|\vx_t)}[q(\vx_{s}|\vx_{t},\vx_{0})]$ <a href="#Ref5">[5]</a>, 
+          many recent works <a href="#Ref2">[2-4]</a> choose to model $p(\vx_0|\vx_t)$ using $p_\theta(\vx_0|\vx_t)$, 
+          where $\theta$ denotes the model parameters. To facilitate computational efficiency, this distribution is 
+          typically factorized as $p_\theta(\vx_0|\vx_t)=\prod_{i=1}^L p_\theta (x_0^i|\vx_t)$ <a href="#Ref1">[1-7]</a>. 
+          The parameter $\theta$ can be optimized by estimating the negative log-likelihood $-\log p_\theta(\vx_0)$ using 
+          a variational upper bound, written as <a href="#Ref3">[3,4]</a>:
+        </p>
+        <p class="has-text-centered">$$
+          \begin{equation}
+          \label{eq:diffusion_elbo}
+          \begin{aligned}
+              \mathcal{L}_\text{vb}(\vx_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vx_t|\vx_0)}\left[\sum_{i=1}^L \log p_\theta (x_0^i|\vx_t) \right] dt,
+          \end{aligned}
+          \end{equation}
+        $$</p>
+        <p>where $\alpha_t'=\frac{d}{dt} \alpha_t$. Since unmasked elements in $\vx_t$ retain their values over time according to Eq. (<a style="color: blue;">\ref{eq:kernel_ts0}</a>), 
+          the <strong><i>carry-over</i> parameterization</strong> <a href="#Ref3">[3,4]</a> can be applied by explicitly setting the corresponding 
+          entries in $\vx_0$ to the unmasked values in $\vx_t$. Formally, this is expressed as
+           $p_\theta(x_0^i | \vx_t) \triangleq \delta_{x_t^i}(x_0^i)$ for position $i$ where $x_t^i \in \XX$. 
+        </p>
+      </div>
+    </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Methodology</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified  scroll-wrapper">
+        <p>We introduce a new MDM framework that incorporates Prime, referred to as <strong>MDM-Prime</strong>. 
+          We begin by introducing an invertible function for constructing sub-token sequences and define a novel 
+          masked diffusion process over these sub-tokens. We then describe a novel parameterization and a simple model 
+          architecture design that operate over sub-token inputs.</p><br>
+        <br>
+        <p id="Fig4" class="has-text-centered" style="text-align: center; font-style: italic;"><img src="./static/images/method_animation.gif" style="width:100%; border: 2px solid rgb(216, 216, 216);"/></br>
+          <b>Figure 4.</b> An illustrative example of the training process of MDM-Prime. In this example, $L=4$ and $\ell=2$.
+        </p>
+        <br>
+        <p>&#9654<b> Notations:</b></p><table style="width:100%; border-collapse: collapse;">
+          <tr>
+            <th style="text-align: left;">Symbol</th>
+            <th style="text-align: left;">Description</th>
+            <th style="text-align: left;">Symbol</th>
+            <th style="text-align: left;">Description</th>
+          </tr>
+          <tr>
+            <td>$\ell$</td>
+            <td>sub-token sequence length</td>
+            <td>$b$</td>
+            <td>number of classes a sub-token can take ($b = \sqrt[\ell]{C}$)</td>
+          </tr>
+          <tr>
+            <td>$\YY$</td>
+            <td>a set of sub-tokens: $\{0,\cdots,b-1\}$</td>
+            <td>$\tilde{\YY}$</td>
+            <td>an augmented set of sub-tokens: $\YY \cup \{\texttt{m}\}$</td>
+          </tr>
+          <tr>
+            <td>$\vy_0$</td>
+            <td>a sequence of sub-tokens ($\vy_0 \in \YY^{L \times \ell}$)</td>
+            <td>$\vy_t$</td>
+            <td>a sequence of noised sub-tokens ($\vy_t \in \tilde{\YY}^{L \times \ell}$)</td>
+          </tr>
+        </table><br>
+
+        <h4 class="title">Discrete Diffusion via Partial Masking</h4>
+        <p>The core idea of Prime is to represent each 
+          token $x^i_0$ with a sub-token sequence $\vy^i_0=[y^{i,1}_0,\cdots,y^{i,\ell}_0]$, allowing the creation 
+          of intermediate states during the element-wise masking of the forward diffusion process. 
+          Given a target length $\ell>1$, this can be achieved through the use of an <strong>invertible function</strong> $f$, 
+          which maps each token $x^i_0 \in \XX$ to its base-$b$ encoding $\vy^i_0 \in \YY^\ell$.</p>
+
+        <!-- <p>The invertibility of $f$ enables the likelihood to be defined on the set of sub-tokens $\YY$. 
+          For convenience, we slightly abuse notation and extend $f$ to accept vector inputs: 
+          $f(\vx_0)\triangleq [f(x^1_0), \cdots, f(x^L_0)]=[\vy^1_0,\cdots,\vy^L_0]=[(y^{1,1}_0,\cdots,y^{1,\ell}_0),\cdots,(y^{L,1}_0,\cdots,y^{L,\ell}_0)]=\vy_0$. 
+          Its inverse is denoted as $f^{-1}$. Under this transformation, the pmf of the data, 
+          $p_{\text{data}}(\vx_0)$, can be equivalently written as $p_{\text{data}} \circ f^{-1}(\vy_0)$ 
+          according to the change-of-variable principle. Rather than directly modeling $\vx_0$, we model 
+          $\vy_0$ through MDM, and reconstruct $\vx_0$ using $f^{-1}(\vy_0)$, 
+          resulting in a parameterized pmf $p_\theta(\vy_0)=p_\theta \circ f(\vx_0)$.</p> -->
+        
+        <p>To learn $p_\theta(\vy_0)$ using MDM, each data point $\vx_0$ is first transformed into $\vy_0 = f(\vx_0)$, 
+          and its corresponding latent variable $\vy_t$ is sampled from $q(\vy_{t}|\vy_0)=\prod_{i=1}^L\prod_{j=1}^{\ell} q(y_{t}^{i,j}|y^{i,j}_0)$ 
+          according to Eq. (<a style="color: blue;">\ref{eq:kernel_t0}</a>) by substituting $x$'s with $y$'s. 
+          The reverse diffusion process is parameterized by $p_\theta(\vy_0 | \vy_t)=\prod_{i=1}^L p_\theta(\vy_0^i| \vy_t)$, 
+          and the model is trained to minimize the loss $\mathcal{L}_{\text{vb}}(\vy_0; \theta)$ as in 
+          Eq. (<a style="color: blue;">\ref{eq:diffusion_elbo}</a>):</p>
+        <p class="has-text-centered">$$
+          \begin{equation}
+          \label{eq:prime_elbo}
+          \begin{aligned}
+              \mathcal{L}_\text{vb}(\vy_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vy_t|\vy_0)}\left[\sum_{i=1}^{L}  \log p_\theta(\vy^{i}_0|\vy_{t}) \right] dt.
+          \end{aligned}
+          \end{equation}
+        $$</p>
+        <p><a href="https://arxiv.org/abs/2505.18495">Our paper</a> shows that Eq. (<a style="color: blue;">\ref{eq:prime_elbo}</a>) 
+          defines a <strong>variational bound</strong> that approximates negative log-likelihood (NLL), and that the number of idle 
+          steps decreases as $\ell$ increases, which guarantees an <strong>improved model utilization</strong> of MDM-Prime during the 
+          reverse diffusion process.
+        </p>
+       <br>  
+       <h4 class="title">Parameterization</h4>
+       <p>This section discusses our implementation for $p_\theta(\vy^{i}_0|\vy_{t})$, which comprises a <strong>decoder</strong> for modeling the distribution of 
+        $\vy^{i}_0$ and an <strong>encoder</strong> for processing the input $\vy_{t}$.</p>
+      <br>
+      <div class="columns is-mobile is-centered">
+        <div class="column is-two-thirds">
+          <p>&#9654<b> Decoder Design via Joint Probability:</b> A straightforward approach to implementing $p_\theta(\vy^{i}_0|\vy_{t})$ is 
+            to factorize it as $\prod_{j=1}^{\ell} p_\theta(y^{i,j}_0|\vy_{t})$, modeling each component with a softmax distribution. 
+            While this factorization allows for easy application of the <i>carry-over</i> parameterization, it introduces two key challenges: 
+            an <strong>independence</strong> assumption and potential <strong>generation of invalid samples</strong>. To address these issues, 
+            we propose to model the <strong>joint distributions</strong> $p_\theta(\vy^{i}_0|\vy_t)$ of a sequence of $\ell$ 
+            sub-tokens while explicitly zeroing out the probability mass assigned to invalid samples. This is achieved by parameterizing 
+            only the logits of base-$b$ encoding $\vy^i_0\in f(\XX)$ that correspond to a valid $x_0^i\in \XX$, which results in $C$ 
+            entries in the logits for $i\in\{1,\cdots,L\}$.</p>
+          <p>Based on the above joint probability design, to further 
+            support the <strong>carry-over</strong> parameterization for MDM-Prime, the element-wise distribution should be defined as 
+            $p_\theta(y^{i,j}_0|\vy_t) \triangleq \delta_{y^{i,j}_t}(y^{i,j}_0)$ for all position $i,j$ where $y^{i,j}_t \in \YY$. 
+            Since we parameterize the joint distribution as $p_\theta(\vy^{i}_0|\vy_t)=p_\theta(y^{i,1}_0,\cdots,y^{i,\ell}_0|\vy_{t})$,
+            this condition is imposed on the marginal distribution as follows:</p>
+          <p class="has-text-centered">$$
+            \begin{equation}
+            \label{eq:marginalization}
+            \begin{aligned}
+              p_\theta(y^{i,j}_0|\vy_{t})=\sum_{y_0^{i,1},\,\cdots,\,y_0^{i,j-1},\,y_0^{i,j+1},\,\cdots,\,y_0^{i,\ell}\in \YY} p_\theta(y^{i,1}_0,\cdots,y^{i,\ell}_0|\vy_{t}) \triangleq \delta_{y^{i,j}_t}(y^{i,j}_0).
+            \end{aligned}
+            \end{equation}
+            $$</p>
+          <p>To meet this condition, the probabilities of $\vy_0^i$ with any element $y_0^{i,j}$ that is inconsistent with $y_t^{i,j}$ 
+            should be explicitly set to zero. The parameterized probability can thus be defined as follows:</p>
+        </div>
+        <div class="column is-one-thirds">
+          <p id="Fig5" class="has-text-justified" style="font-style: italic;"><img src="./static/images/carry_over_animation.gif" style="width:100%; border: 2px solid rgb(216, 216, 216);"/></br>
+            <p><b>Figure 5.</b> An illustration of the proposed carry-over parameterization. Softmax distributions 
+            $p_\theta (\vy_0^i |\vy_t)$ (i.e., Eq. (<a style="color: blue;">\ref{eq:parameterization}</a>)) 
+            are formed by normalizing the corresponding logits highlighted in yellow. In this example, 
+            $C = 7$, $\ell = 3$, and $b = 2$.</p>
+          </p>
+        </div>
+      </div>
+       
+       <p class="has-text-centered">$$
+        \begin{equation}
+        \label{eq:parameterization}
+        \begin{aligned}
+            p_\theta(\vy^{i}_0|\vy_{t})=
+            \begin{cases}
+                \frac{\exp (E_\theta (\vy_0^i|\vy_t))}{ \sum_{\vy^i\in \VV(\vy_t^i)} \exp (E_\theta (\vy^i|\vy_t)) },& \text{if $\vy^{i}_0\in \VV(\vy_t^i)$},\\
+                0,& \text{if $\vy^{i}_0\notin \VV(\vy_t^i)$},
+            \end{cases}
+        \end{aligned}
+        \end{equation}
+       $$</p>
+       <p>where $\VV(\vy_t^i)\triangleq \{ \vy^i=[y^{i,1}, \cdots, y^{i,\ell}]  \in f(\XX) \,\,\,s.t.\,\,\, (y^{i,j} = y^{i,j}_t) \vee (y^{i,j}_t = \texttt{m})\}$ 
+          denotes a set of outputs that is consistent with $y_t^{i,j}$, and $E_\theta:\YY^{\ell}\times \tilde{\YY}^{\ell\times L}\to \RR$ is 
+          a scalar logit. Proposition A.4 in <a href="https://arxiv.org/abs/2505.18495">our paper</a> guarantees that Eq. (<a style="color: blue;">\ref{eq:parameterization}</a>) satisfies 
+          Eq. (<a style="color: blue;">\ref{eq:marginalization}</a>). An illustrative example is provided in <a href="#Fig4">Fig. 4</a>. 
+          As the reverse diffusion process progresses, the number of unmasked sub-tokens in $\vy_t^i$ increases, leading to a substantial reduction in $|\VV(\vy_t^i)|$. This results in a decreasing 
+          number of candidate classes of $\vy^i_0$ over time, and thus <strong>explicitly reducing uncertainty</strong> in the prediction task.</p>
+      <br>
+      <div class="columns is-mobile is-centered">
+        <div class="column is-half">
+          <p>&#9654<b> Encoder Design for Processing Sub-tokens:</b> In contrast to the decoder, where the distribution over sub-tokens 
+            $\vy^i_0 \in f(\XX)$ is represented jointly using logit outputs with $C$ entries (see <a href="#Fig4">Fig. 4</a>), the encoder 
+            receives noised inputs $\vy_t^i$ that lie in the augmented set $\tilde{\YY}^\ell$. 
+            Since $|\tilde{\YY}^\ell|$ may grow with $\ell$ and typically exhibits $|\tilde{\YY}^\ell| \gg C$, 
+            creating an embedding lookup table for $\vy_t^i$ is impractical due to the resulting growth in the number of parameters in it. 
+            To address this issue, we propose to model each sub-token embedding separately (i.e., creating a lookup table for individual 
+            $y_t^{i,j}\in\tilde{\YY}$), followed by a <strong>merging operation</strong> to produce a token embedding.</p>
+
+          <p>In our approach, a simple merging operation based on concatenation is employed. Let $D$ denote the dimensionality of 
+            the token embedding vector. Each sub-token is first embedded into a vector of size $D/\ell$, and the resulting $\ell$ 
+            embeddings are concatenated to form a $D$-dimensional token embedding vector. This token embedding can then be processed 
+            by an arbitrary downstream neural network, which allows us to reuse the standard MDM architecture. A comparison between 
+            this design and a standard MDM architecture is shown in <a href="#Fig6">Fig. 6</a>.
+          </p>
+        </div>
+        <div class="column is-half">
+          <p id="Fig6" class="has-text-centered" style="font-style: italic;"><img src="./static/images/architecture_comp.png" style="width: 95%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+            <b>Figure 6.</b> Comparison between (a) MDM-Prime and (b) standard MDM architectures. The embedding lookup table 
+            in (a) has fewer parameters since $|\tilde{\YY}|< |\tilde{\XX}|$ and $D/\ell< D$.</p>
+        </div>
+      </div>
+      <p>In summary, adapting a standard MDM to MDM-Prime requires only <strong>minimal architectural modifications</strong> on the embedding 
+        layer. This simple strategy preserves the overall architectural design of the standard MDM, enabling a fair comparison 
+        with our baseline in the following experiments.
+      </p>
+    </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Experiments</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p>This section presents empirical evaluations to examine the effectiveness of the proposed method.</p><br>
+        <h4 class="title">Text Generation</h4>
+        <p>&#9654<b> Configuration:</b> In this set of experiments, models are trained on the OpenWebText (OWT) dataset. 
+          The text data are tokenized using the GPT-2 tokenizer, which defines $L = 1,024$ and $C = 50,257$. 
+          The Masked Diffusion Language Model (MDLM) <a href="#Ref3">[3]</a> is adopted as our baseline, and the experimental setup 
+          is consistent with <a href="#Ref3">[3]</a>. Prime with different $\ell$ is applied to enhance it, 
+          and our method is denoted as MDLM-Prime. We also include comparisons with several recent approaches
+          <a href="#Ref1">[1,3,4,6,8]</a>.</p>
+        <br>
+        <p id="Fig7" class="has-text-justified" style="font-style: italic;"><img src="./static/images/text_demo.gif" style="width: 85%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+          <b>Figure 7.</b> Visualization of the sampling processes of ARM, MDLM, and MDLM-Prime. The masked ratio is measured on a
+          per-token basis, with higher values indicated by darker shades of blue. The samples are generated
+          with prefix and suffix texts sourced from an <a href="https://timesofindia.indiatimes.com/life-style/books/features/10-timeless-poems-by-rabindranath-tagore/amp_etphotostory/75593222.cms">online article</a> 
+          describing Rabindranath Tagore’s poems.</p>
+        <br>
+        <div class="columns is-mobile is-centered">
+          <div class="column is-two-thirds">
+            <p>&#9654<b> Improvements to Likelihood Evaluation:</b> We evaluate the models’ ability to capture the data distribution 
+              using the <strong>perplexity (PPL)</strong> metric. <a href="#Tab1">Table 1</a> reports PPL on OWT, 
+              along with the <strong>idle step ratio (ISR)</strong>, which is defined as the proportion of idle steps relative to the total sampling steps. 
+              We observe that as $\ell$ increases, MDLM-Prime achieves lower PPL, with performance converging when 
+              $\ell \geq 4$. Since ISR also converges when $\ell \geq 4$, this trend suggests that ISR can serve as an indicator of <strong>improved 
+              likelihood modeling ability</strong>. Moreover, MDLM-Prime with $\ell \geq 3$ outperforms ARM, 
+              MDM-based approaches <a href="#Ref1">[1,3,4,6]</a>, and their hybrid variant <a href="#Ref6">[6,8]</a> 
+              by a noticeable margin in terms of PPL, indicating that incorporating intermediate state representations allows MDLM-Prime 
+              to model data likelihood more effectively. Instead of following recent approaches <a href="#Ref6">[6,8]</a> 
+              that leverage an autoregressive formulation to enhance MDM performance, MDLM-Prime maintains an <strong>order-agnostic</strong>
+              framework while achieving superior performance on textual data.</p>
+          </div>
+          <div class="column is-one-thirds">
+            <p id="Tab1" class="has-text-justified" style="font-style: italic;"><img src="./static/images/ppl.png" style="width: 100%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+              <b>Table 1.</b> Evaluation on OWT. Methods marked with * involve autoregression.</p>
+          </div>
+        </div>
+
+        <p>&#9654<b> Improvements to Generalizability to Unseen Text Data:</b> With the models trained on OWT, we then examine their 
+          generalizability to unseen textual datasets. To assess the models’ generalizability across diverse text domains, we report 
+          PPL on a suite of commonly used zero-shot benchmarks, including LAMBADA, WikiText, Penn Treebank (PTB), 1 Billion Word 
+          Benchmark (LM1B), AG News, and Scientific Papers (PubMed and ArXiv subsets). The results are reported in <a href="#Tab2">Table 2</a>. 
+          MDLM-Prime exhibits superior results on LAMBADA, PTB, and ArXiv, and achieves 
+          comparable performance to ARM on WikiText. While it underperforms ARM on AG News, the overall results highlight 
+          its <strong>superior generalizability</strong> across multiple domains. Furthermore, the ablation study in Appendix A.5.1 of <a href="https://arxiv.org/abs/2505.18495">our paper</a>
+          reveals that the carry-over parameterization plays an important role in enhancing zero-shot performance, offering improvements on both LAMBADA and PubMed.</p>
+        <p id="Tab2" class="has-text-justified" style="font-style: italic;"><img src="./static/images/zeroshot.png" style="width: 80%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -15pt;"></br>
+          <b>Table 2.</b> Zero-shot perplexities evaluated on seven textual datasets. Lower values correspond to better performance. Methods marked with * incorporate an autoregressive formulation. MDLM-Prime exhibits improved results on LAMBADA, PTB, and ArXiv.</p>
+
+        <br>
+        <h4 class="title">Image Generation</h4>
+        <p>&#9654<b> Configuration:</b> In this set of experiments, models are trained and evaluated on the CIFAR-10 
+          and ImageNet-32 datasets. For both datasets, the dimensionality is set to $L=32\times 32 \times 3$,
+          with $C = 256$ corresponding to pixel intensity values. The core model architecture is adapted from
+          the ablated diffusion model (ADM) <a href="#Ref9">[9]</a>, which is the same as that used in <a href="#Ref7">[7]</a>. Sample quality
+          is evaluated using the widely adopted Fréchet Inception Distance (FID) and Inception Score (IS) metrics.</p>
+        <br>
+        <p id="Fig8" class="has-text-centered" style="font-style: italic;"><img src="./static/images/img_demo.gif" style="width: 90%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+          <b>Figure 8.</b> CIFAR-10 samples generated by MDM-Prime with NFE=512.</p>
+        <br>
+        <p>&#9654<b> Improvements to Sample Quality:</b> The benchmark results are reported in <a href="#Tab3">Table 3</a>, 
+          which include two baselines, MDM and MDM-Mixture, as well as several existing 
+          generative modeling approaches. The MDM baseline corresponds to the standard configuration with $\ell = 1$, 
+          while MDM-Mixture extends this baseline by incorporating a mixture distribution using an auxiliary variable, 
+          similar to <a href="#Ref10">[10]</a>. In this comparison, MDM-Prime adopts $\ell = 2$.</p>
+
+        <p>As shown in the tables, MDM and MDM-Mixture are inferior to MDM-Prime. On CIFAR-10, MDM-Prime achieves better 
+          results than the other discrete generative models while requiring fewer NFE, and attains performance comparable 
+          to StyleGAN+ADA <a href="#Ref11">[11]</a>. On ImageNet-32, MDM-Prime demonstrates improved performance over 
+          existing continuous diffusion and score-based models, achieving an FID improvement of 1.36 over 
+          ScoreFlow (VP) <a href="#Ref12">[12]</a>.</p>
+        
+        <div class="column is-one-thirds">
+          <p id="Tab3" class="has-text-justified" style="font-style: italic;"><img src="./static/images/fid.png" style="width: 82%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+            <b>Table 3.</b> FID and IS evaluation on CIFAR-10 and ImageNet-32. The arrow symbols $\uparrow$ / $\downarrow$ represent that higher / lower
+            results correspond to better performance.</p>
+        </div>
+
+      </div>
+    </div>
+</section>
+
+<!-- <section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Conclusion</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p>Scientific progress has continually reshaped our understanding of what constitutes the most basic units of matter. 
+          Physicists initially believed that atoms were elementary units of matter. This view changed with the discoveries of 
+          the electron, the atomic nucleus, and eventually the development of the <i>standard model</i> <a href="#Ref13">[13]</a>, 
+          which describes fundamental particles, their interactions, and how they combine to form atoms.</p>
+        <p>In the context of 
+          generative models, we proposed Prime, a method to decompose the elementary unit of discrete data, i.e., tokens, into 
+          fine-grained subcomponents. MDM-Prime establishes a principled framework for perturbing and reconstructing discrete 
+          data using sub-token representations. Experimental results on both text and image generation tasks demonstrated that 
+          sub-token representations provide a more expressive modeling paradigm. We believe that this framework holds potential 
+          for addressing real-world problems that require fine-grained and precise modeling of discrete data.
+        </p>
+
+      </div>
+    </div>
+</section> -->
+
+<!-- <section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Poster</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+        <p class="has-text-centered" style="font-style: italic;"><embed src="./static/images/NeurIPS23-poster.pdf" width="980pt" height="560pt"></p>
+      </div>
+    </div>
+</section> --> 
+
+<section class="section" id="reference">
+  <div class="container is-max-desktop content">
+    <div class="w3-bar w3-border w3-light-grey"></div> <br><br>
+    <h2 class="title">References</h2>
+    <p id="Ref1">[1] A. Lou, C. Meng, and S. Ermon. 
+      Discrete Diffusion Modeling by Estimating the Ratios of the Data Distribution, ICML 2024.</p>
+    <p id="Ref2">[2] S. Nie, F. Zhu, Z. You, X. Zhang, J. Ou, J. Hu, J. Zhou, Y. Lin,
+      J.-R. Wen, and C. Li. Large Language Diffusion Models, ICML 2025.</p>
+    <p id="Ref3">[3] S. S. Sahoo, M. Arriola, Y. Schiff, A. Gokaslan, E. Marroquin,
+      J. T Chiu, A. Rush, and V. Kuleshov. Simple and Effective Masked Diffusion Language Models. NeurIPS 2024.</p>
+    <p id="Ref4">[4] J. Shi, K. Han, Z. Wang, A. Doucet, and M. K. Titsias. Simplified
+      and Generalized Masked Diffusion for Discrete Data. NeurIPS 2024.</p>
+    <p id="Ref5">[5] J. Austin, D. D. Johnson, J. Ho, D. Tarlow, and R. v. d. Berg.
+      Structured Denoising Diffusion Models in Discrete State-Spaces. NeurIPS 2021.</p>
+    <p id="Ref6">[6] M. Xu, T. Geffner, K. Kreis, W. Nie, Y. Xu, J. Leskovec, S. Ermon, and A. Vahdat. 
+      Energy-Based Diffusion Language Models for Text Generation. ICLR 2025.</p>
+    <p id="Ref7">[7] I. Gat, T. Remez, N. Shaul, F. Kreuk, R. T. Q. Chen, G. Synnaeve, Y. Adi,
+      and Y. Lipman. Discrete Flow Matching. NeurIPS 2024.</p>
+    <p id="Ref8">[8] M. Arriola, A. Gokaslan, J. T Chiu, Z. Yang, Z. Qi, J. Han,
+      S. S. Sahoo, and V. Kuleshov. Block Diffusion: Interpolating Between
+      Autoregressive and Diffusion Language Models. ICLR 2025.</p>
+    <p id="Ref9">[9] P. Dhariwal and A. Nichol. 
+      Diffusion Models Beat GANs on Image Synthesis. NeurIPS 2021.</p>
+    <p id="Ref10">[10] S. Hayakawa, Y. Takida, M. Imaizumi, H. Wakaki, and Y. Mitsufuji.
+      Distillation of Discrete Diffusion through Dimensional Correlations. Machine Learning and
+      Compression Workshop at NeurIPS 2024.</p>
+    <p id="Ref11">[11] T. Karras, M. Aittala, J. Hellsten, S. Laine, J. Lehtinen, and T. Aila.
+      Training Generative Adversarial Networks with Limited Data. NeurIPS 2020.</p>
+    <p id="Ref12">[12] Y. Song, C. Durkan, I. Murray, and S. Ermon. Maximum Likelihood Training
+      of Score-Based Diffusion Models. NeurIPS 2021.</p>
+    <p id="Ref13">[13] W. N. Cottingham and D. A. Greenwood. An Introduction to the Standard Model of Particle
+      Physics. 2007.</p>
+  </div>
+</section>
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{chao2025mdmprime,
+      title={{Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking}}, 
+      author={Chen-Hao Chao, Wei-Fang Sun, Hanwen Liang, Chun-Yi Lee, Rahul G. Krishnan},
+      journal={\tt arXiv:2505.18495 [cs.LG]},
+      year={2025},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            The template of this page is based on the
+            <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> website.
+            You are free to borrow the <a href="https://github.com/chen-hao-chao/ebflow">code</a> of this website,
+            we just ask that you link back to this page in the footer.
+            Please remember to remove the analytics code included in the header of the website which
+            you do not want on your website.
+          </p>
+          <p>
+            This website is licensed under a <a rel="license"
+              href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+              Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
