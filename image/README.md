@@ -1,99 +1,17 @@
+# Image Generation Experiments
+
+[![arXiv](https://img.shields.io/badge/arXiv-2505.18495-b31b1b.svg?logo=arxiv&logoColor=red)](https://arxiv.org/abs/2505.18495) [![deploy](https://img.shields.io/badge/🤗_HuggingFace%20-MDM_Prime%20-orange)](https://huggingface.co/chen-hao-chao/mdm-prime) [<img src="https://img.shields.io/badge/dockerhub-MDM_Prime-blue.svg?logo=docker">](https://hub.docker.com/r/chenhaochao/mdm-prime)<br>
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-cifar-10)](https://paperswithcode.com/sota/image-generation-on-cifar-10?p=beyond-masked-and-unmasked-discrete-diffusion) [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-imagenet-32x32)](https://paperswithcode.com/sota/image-generation-on-imagenet-32x32?p=beyond-masked-and-unmasked-discrete-diffusion)<br>
+
+This folder contains the code implementation of the image generation experiments presented in **Section 4.2** of [our paper](https://arxiv.org/abs/2505.18495).
+
+<img src="assets/img_demo.gif" alt="img_demo" width="850px">
+
+## Coming Soon
+
+Thank you for your interest in our project! We are currently preparing and testing the code and will be releasing it soon.
+
 <div align="center">
-
-# Flow Matching
-
-[![arXiv](assets/arXiv-2412.06264-red.svg)](https://arxiv.org/abs/2412.06264)
-[![CI](https://github.com/facebookresearch/flow_matching/actions/workflows/ci.yaml/badge.svg)](https://github.com/facebookresearch/flow_matching/actions/workflows/ci.yaml)
-[![Coverage](https://github.com/facebookresearch/flow_matching/raw/refs/heads/gh-pages/coverage/coverage-badge.svg)](https://stunning-potato-4k4z71e.pages.github.io/coverage/)
-[![License: CC BY-NC 4.0](assets/License-CC_BY--NC_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
-[![PyPI](https://img.shields.io/pypi/v/flow-matching)](https://pypi.org/project/flow-matching/)
-
-
+<br>
+<img src="../assets/avatar.jpg" width="500">
 </div>
-
-`flow_matching` is a PyTorch library for Flow Matching algorithms, featuring continuous and discrete implementations. It includes examples for both text and image modalities. This repository is part of [Flow Matching Guide and Codebase](https://arxiv.org/abs/2412.06264).
-
-
-![](./assets/teaser.png)
-
-## Installation
-
-This repository requires Python 3.9 and Pytorch 2.1 or greater. To install the latest version run:
-```
-pip install flow_matching
-```
-
-## Repository structure
-
-The core and example folders are structured in the following way:
-```bash
-.
-├── flow_matching                  # Core library
-│   ├── loss                       # Loss functions
-│   │   └── ...
-│   ├── path                       # Path and schedulers
-│   │   ├── ...
-│   │   └── scheduler              # Schedulers and transformations
-│   │       └── ...
-│   ├── solver                     # Solvers for continuous and discrete flows
-│   │   └── ...
-│   └── utils
-│       └── ...
-└── examples                       # Synthetic, image, and text examples
-    ├── ...
-    ├── image
-    │       └── ...
-    └── text 
-            └── ...
-```
-
-## Development
-
-To create a conda environment with all required dependencies, run:
-```
-conda env create -f environment.yml
-conda activate flow_matching
-```
-
-Install pre-commit hook. This will ensure that all linting is done on each commit
-```
-pre-commit install
-```
-
-Install the `flow_matching` package in an editable mode:
-```
-pip install -e .
-```
-
-## FAQ
-
-#### I want to train a Flow Matching model, where can I find the training code?
-
-We provide [training examples](examples). Under this folder, you can find synthetic data for [continuous](examples/2d_flow_matching.ipynb), [discrete](examples/2d_discrete_flow_matching.ipynb), and [Riemannian](examples/2d_riemannian_flow_matching_flat_torus.ipynb) Flow Matching. We also provide full training [examples](examples/image) (continuous and discrete) on CIFAR10 and face-blurred ImageNet, and a scalable discrete Flow Matching example for [text modeling](examples/text).
-
-#### Do you release pre-trained models?
-
-In this version, we don't release pre-trained models. All models under [examples](examples) can be trained from scratch by a single running command. 
-
-#### How to contribute to this codebase?
-Please follow the [contribution guide](CONTRIBUTING.md).
-
-## License
-
-The code in this repository is CC BY-NC licensed. See the [LICENSE](LICENSE) for details.
-
-## Citation
-
-If you found this repository useful, please cite the following.
-
-```
-@misc{lipman2024flowmatchingguidecode,
-      title={Flow Matching Guide and Code}, 
-      author={Yaron Lipman and Marton Havasi and Peter Holderrieth and Neta Shaul and Matt Le and Brian Karrer and Ricky T. Q. Chen and David Lopez-Paz and Heli Ben-Hamu and Itai Gat},
-      year={2024},
-      eprint={2412.06264},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2412.06264}, 
-}
-```

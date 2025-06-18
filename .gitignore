@@ -1,0 +1,13 @@
+*logs/
+*.out
+*.err
+*/__pycache__
+
+image/data
+image/wandb
+image/results*
+image/huggingface_cache
+
+text/outputs
+text/results*
+text/huggingface_cache
