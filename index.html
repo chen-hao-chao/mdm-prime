@@ -493,7 +493,7 @@
         <h4 class="title">Discrete Diffusion via Partial Masking</h4>
         <p>The core idea of Prime is to represent each 
           token $x^i_0$ with a sub-token sequence $\vy^i_0=[y^{i,1}_0,\cdots,y^{i,\ell}_0]$, allowing the creation 
-          of intermediate states during the element-wise masking of the forward diffusion process. 
+          of intermediate states during the element-wise masking of the forward diffusion process (see <a href="#Fig4">Fig. 4</a>). 
           Given a target length $\ell>1$, this can be achieved through the use of an <strong>invertible function</strong> $f$, 
           which maps each token $x^i_0 \in \XX$ to its base-$b$ encoding $\vy^i_0 \in \YY^\ell$.</p>
 
@@ -581,14 +581,14 @@
        <p>where $\VV(\vy_t^i)\triangleq \{ \vy^i=[y^{i,1}, \cdots, y^{i,\ell}]  \in f(\XX) \,\,\,s.t.\,\,\, (y^{i,j} = y^{i,j}_t) \vee (y^{i,j}_t = \texttt{m})\}$ 
           denotes a set of outputs that is consistent with $y_t^{i,j}$, and $E_\theta:\YY^{\ell}\times \tilde{\YY}^{\ell\times L}\to \RR$ is 
           a scalar logit. Proposition A.4 in <a href="https://arxiv.org/abs/2505.18495">our paper</a> guarantees that Eq. (<a style="color: blue;">\ref{eq:parameterization}</a>) satisfies 
-          Eq. (<a style="color: blue;">\ref{eq:marginalization}</a>). An illustrative example is provided in <a href="#Fig4">Fig. 4</a>. 
+          Eq. (<a style="color: blue;">\ref{eq:marginalization}</a>). An illustrative example is provided in <a href="#Fig5">Fig. 5</a>. 
           As the reverse diffusion process progresses, the number of unmasked sub-tokens in $\vy_t^i$ increases, leading to a substantial reduction in $|\VV(\vy_t^i)|$. This results in a decreasing 
           number of candidate classes of $\vy^i_0$ over time, and thus <strong>explicitly reducing uncertainty</strong> in the prediction task.</p>
       <br>
       <div class="columns is-mobile is-centered">
         <div class="column is-half">
           <p>&#9654<b> Encoder Design for Processing Sub-tokens:</b> In contrast to the decoder, where the distribution over sub-tokens 
-            $\vy^i_0 \in f(\XX)$ is represented jointly using logit outputs with $C$ entries (see <a href="#Fig4">Fig. 4</a>), the encoder 
+            $\vy^i_0 \in f(\XX)$ is represented jointly using logit outputs with $C$ entries (see <a href="#Fig5">Fig. 5</a>), the encoder 
             receives noised inputs $\vy_t^i$ that lie in the augmented set $\tilde{\YY}^\ell$. 
             Since $|\tilde{\YY}^\ell|$ may grow with $\ell$ and typically exhibits $|\tilde{\YY}^\ell| \gg C$, 
             creating an embedding lookup table for $\vy_t^i$ is impractical due to the resulting growth in the number of parameters in it. 
