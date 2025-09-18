@@ -1,0 +1,16 @@
+pre-commit
+black==22.6.0
+usort==1.0.4
+ufmt==2.3.0
+flake8==7.0.0
+ipykernel
+torchdiffeq
+scikit-learn
+pydoclint
+coverage
+submitit
+torchmetrics[image]
+torchvision
+wandb
+ray[tune]
+huggingface_hub

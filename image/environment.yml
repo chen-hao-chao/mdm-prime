@@ -1,0 +1,13 @@
+name: mdm-prime
+channels:
+  - pytorch
+  - conda-forge
+  - nvidia
+dependencies:
+  - python=3.9
+  - pytorch
+  - pytorch-cuda
+  - matplotlib
+  - numpy
+  - pip
+  - tqdm
