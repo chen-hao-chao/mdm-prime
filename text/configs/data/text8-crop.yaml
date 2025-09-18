@@ -1,0 +1,6 @@
+# TODO: When using this dataset, set model.length = 256 to match D3PM setup
+train: text8-crop
+valid: text8
+tokenizer_name_or_path: text8
+wrap: True
+streaming: False

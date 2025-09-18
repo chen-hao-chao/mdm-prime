@@ -1,0 +1,6 @@
+train: lambada
+valid: lambada
+test: lambada
+tokenizer_name_or_path: gpt2
+wrap: True
+streaming: False

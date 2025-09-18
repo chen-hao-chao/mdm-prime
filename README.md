@@ -18,7 +18,7 @@
 
 This repository contains the code implementation of the experiments presented in the paper [*Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking*](https://arxiv.org/abs/2505.18495).
 
-- :whale: **Docker support** for enhanced reproducibility
+- :whale: **Docker environments** for enhanced reproducibility
 - :cd: **Pretrained weights** for inference and evaluation
 - :microscope: **Code for all experiments** in our paper:
   - Toy experiments on synthetic data
