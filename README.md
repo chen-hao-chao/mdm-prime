@@ -8,22 +8,26 @@
 <a href="https://arxiv.org/abs/2505.18495"><img src="https://img.shields.io/badge/arXiv-2505.18495-b31b1b.svg?logo=arxiv&logoColor=red" alt="MDM-Prime Paper on arXiv"/></a>
 <a href="https://huggingface.co/chen-hao-chao/mdm-prime"><img src="https://img.shields.io/badge/🤗_HuggingFace%20-MDM_Prime%20-orange" alt="MDM-Prime on Hugging Face"/></a>
 <a href="https://hub.docker.com/r/chenhaochao/mdm-prime"><img src="https://img.shields.io/badge/dockerhub-MDM_Prime-blue.svg?logo=docker" alt="MDM-Prime on Docker"/></a>
-<a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a><br>
-<!-- <a href="https://paperswithcode.com/sota/language-modelling-on-openwebtext?p=beyond-masked-and-unmasked-discrete-diffusion"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/language-modelling-on-openwebtext" alt="MDM-Prime on Paper with Code"/></a><br>
-<a href="https://paperswithcode.com/sota/image-generation-on-cifar-10?p=beyond-masked-and-unmasked-discrete-diffusion"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-cifar-10" alt="MDM-Prime on Paper with Code"/></a><br>
-<a href="https://paperswithcode.com/sota/image-generation-on-imagenet-32x32?p=beyond-masked-and-unmasked-discrete-diffusion"><img src="https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/beyond-masked-and-unmasked-discrete-diffusion/image-generation-on-imagenet-32x32" alt="MDM-Prime on Paper with Code"/></a>
-</p> -->
+<a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a>
+<a href="https://x.com/chenhao_chao/status/1935699633654931464"><img src="https://img.shields.io/badge/MDM_Prime-black.svg?logo=X" alt="MDM-Prime on X"/></a><br>
 
 ## What’s Inside
 
 This repository contains the code implementation of the experiments presented in the paper [*Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking*](https://arxiv.org/abs/2505.18495).
 
-- :whale: **Docker environments** for enhanced reproducibility
-- :cd: **Pretrained weights** for inference and evaluation
+- :whale: **Docker environments** for easy installation
+- 🤗 **Pretrained weights** for inference and evaluation
+- :chart_with_downwards_trend: **Weights and Biases logs** for enhanced reproducibility
 - :microscope: **Code for all experiments** in our paper:
   - Toy experiments on synthetic data
   - Text generation on OpenWebText
   - Image generation on CIFAR-10 & ImageNet-32
+
+
+## News
+- 📅 **[Mar 17, 2026]** Released [MDM-Prime-v2](https://arxiv.org/abs/2603.16077). Check out the implementation in [mdm-prime/text](/text).
+- 🎉 **[Sep 18, 2025]** Our paper has been accepted to NeurIPS 2025.
+
 
 ## Overview
 

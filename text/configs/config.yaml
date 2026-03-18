@@ -137,4 +137,9 @@ prime:
   base: 50257
   vocab_size: 50257
   seq_length: 1024
-  carry_over: True
+  carry_over: False
+  non_shared_emb: False
+  sum_emb: False
+  subtokenizer_type: baseb
+  permutation_file_path: /app/subtokenizer/perm/perm_1.0_65536.pt
+  chunk_point: 1.0

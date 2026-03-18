@@ -19,6 +19,14 @@ from utils.eval_utils import compute_generative_perplexity, compute_entropy
 from utils.eval_utils import compute_mauve, compute_self_bleu, compute_ngram_repetition_percentage
 from huggingface_hub import hf_hub_download
 
+import sys
+import transformers.models.gpt2.tokenization_gpt2 as gpt2_legacy
+# 1. Alias the missing module path to the existing one
+sys.modules['transformers.models.gpt2.tokenization_gpt2_fast'] = gpt2_legacy
+# 2. Ensure the 'Fast' class is accessible where the checkpoint expects it
+from transformers import GPT2TokenizerFast
+gpt2_legacy.GPT2TokenizerFast = GPT2TokenizerFast
+
 omegaconf.OmegaConf.register_new_resolver(
   'cwd', os.getcwd)
 omegaconf.OmegaConf.register_new_resolver(
@@ -223,7 +231,6 @@ def _sample_and_save(config, logger, tokenizer):
   
   logger.info("Finish sampling!")
 
-import pdb
 def _eval_sample(config, logger, tokenizer):
   logger.info("Loading generated samples...")
   number_samples = config.sampling.total_samples

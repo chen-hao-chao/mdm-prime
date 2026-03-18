@@ -374,8 +374,55 @@ class DIT(nn.Module, huggingface_hub.PyTorchModelHubMixin):
 
 # -------
 
+class InterleavedPatchEmbedder(nn.Module):
+    """
+    Input:
+      x: LongTensor of shape (B, L*l)
+
+    Steps:
+      1) Interleaved embeddings with l distinct tables via one big table of size (vocab_size*l, D).
+         Position p uses table (p % l) by offsetting ids with (p % l) * vocab_size.
+      2) Sum adjacent groups inside each (length l) block. Group size g = l.
+         Output shape: (B, L, D).
+
+    Args:
+      vocab_size: size of each vocab table
+      hidden_size: embedding dim D
+      l: # of interleaved tables (and block length)
+    """
+    def __init__(self, vocab_size: int, hidden_size: int, target_length: int):
+        super().__init__()
+        assert target_length >= 1, "l must be >= 1"
+        self.vocab_size = vocab_size
+        self.hidden_size = hidden_size
+        self.target_length = target_length
+
+        # One large embedding that packs l distinct tables
+        self.weight = nn.Embedding(vocab_size * target_length, hidden_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: (B, L*l) long
+        return: (B, L, D)
+        """
+        if x.dtype != torch.long:
+            raise TypeError("x must be torch.long token ids")
+
+        B, N = x.shape
+        if N % self.target_length != 0:
+            raise ValueError(f"Sequence length N={N} must be divisible by l={self.l}.")
+        L = N // self.target_length
+
+        # ----- Interleaved lookup (vectorized) -----
+        pos = torch.arange(N, device=x.device)                # (N,)
+        table_ids = pos.remainder(self.target_length)                     # (N,)
+        offsets = table_ids * self.vocab_size                 # (N,)
+        x_offset = x + offsets.unsqueeze(0)                   # (B, N)
+        out = self.weight(x_offset)                             # (B, N, D)
+        return out
+
 class PerceiverDIT(nn.Module):
-  def __init__(self, config, vocab_size: int, target_length: int, base: int):
+  def __init__(self, config, vocab_size: int, target_length: int, base: int, non_shared_emb: bool = False, sum_emb: bool = False):
       super().__init__()
       if type(config) == dict:
           config = omegaconf.OmegaConf.create(config)
@@ -387,9 +434,16 @@ class PerceiverDIT(nn.Module):
       self.base = base
       self.extended_seq_len = config.model.length * target_length
       self.original_seq_len = config.model.length
+      self.sum_emb = sum_emb
 
-      hidden_dim = config.model.hidden_size // target_length
-      self.vocab_embed = EmbeddingLayer(hidden_dim, base)
+      if self.sum_emb:
+        hidden_dim = config.model.hidden_size
+      else:
+        hidden_dim = config.model.hidden_size // target_length
+      if non_shared_emb:
+        self.vocab_embed = InterleavedPatchEmbedder(base, hidden_dim, target_length)
+      else:
+        self.vocab_embed = EmbeddingLayer(hidden_dim, base)
 
       num_blocks = config.model.n_blocks
       self.sigma_map = TimestepEmbedder(config.model.cond_dim)
@@ -417,8 +471,12 @@ class PerceiverDIT(nn.Module):
       time_emb = self.sigma_map(sigma)
       c = F.silu(time_emb)
 
-      x_shape = x_.shape
-      x = x_.reshape(x_shape[0], x_shape[1]//self.target_length, x_shape[2]*self.target_length)
+      B, L_l, D = x_.shape
+      L = L_l // self.target_length
+      if self.sum_emb:
+        x = x_.view(B, L, (self.target_length), D).sum(dim=2).reshape(B, L, D)
+      else:
+        x = x_.reshape(B, L, D * self.target_length)
 
       rotary_cos_sin = self.rotary_emb(x)
       with torch.cuda.amp.autocast(dtype=torch.bfloat16):

@@ -28,6 +28,11 @@ docker build -t mdlm-prime:latest .
 docker run -v $(pwd):/app --rm -it --gpus all --ipc=host chenhaochao/mdlm-prime:latest
 ```
 
+3. Activate the conda environment:
+```bash
+conda activate mdlm-prime
+```
+
 ### :snake: Conda
     
 1. Install conda environment:
@@ -95,7 +100,7 @@ Before starting training, set up your [Weights & Biases](https://wandb.ai/site/)
 export WANDB_API_KEY=${your_wandb_key}
 ```
 
-:pushpin: **MDLM**
+:pushpin: **MDM**
 
 ```bash
 python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
@@ -116,7 +121,7 @@ python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
     - `sampling.steps`: number of steps used for sampling. (default: `256`)
 
 
-:pushpin: **MDLM-Prime**
+:pushpin: **MDM-Prime**
 
 ```bash
 python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
@@ -131,6 +136,26 @@ python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
     - `prime.target_length`: number of sub-tokens, i.e., $\ell$. (default: `1`)
     - `prime.carry_over`: whether to enable carry-over parameterization. (default: `False`)
 
+
+:pushpin: :new: **MDM-Prime-v2** 
+
+```bash
+python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
+                  loader.batch_size=16 loader.eval_batch_size=16 model=small \
+                  wandb.name=results_prime_v2_owt checkpointing.save_dir=/app/results_prime_v2_owt \
+                  prime.target_length=16 prime.carry_over=False prime.subtokenizer_type=baseb_shuffle \
+                  prime.permutation_file_path=/app/subtokenizer/perm/perm_1.0_65536.pt \
+                  prime.non_shared_emb=False prime.sum_emb=False prime.chunk_point=1.0 \
+                  eval.compute_zero_shot=False eval.conditional_sampling=False \
+                  eval.compute_generative_perplexity=False sampling.steps=512
+```
+
+- **Arguments:**
+    - `prime.subtokenizer_type`: type of subtokenizer: `baseb` or `baseb_shuffle`. (default: `baseb`)
+    - `prime.permutation_file_path`: the path to the permutation dictionary used in `baseb_shuffle` subtokenizer.
+    - `prime.non_shared_emb`: whether to make the embedding table sharable. (default: `False`)
+    - `prime.sum_emb`: whether to sum up the sub-token embeddings. (default: `False`)
+    - `prime.chunk_point`: the chunking strategy for noise. (default: `1.0`)
 
 :pushpin: **ARM**
 
@@ -148,11 +173,23 @@ python -u -m main data=openwebtext-split data.cache_dir=/app/huggingface_cache \
     - `parameterization`: flag to select the design of output logits. (default: `subs`)
     - `sampling.predictor`: flag to select the designs of samplers. (default: `ddpm_cache`)
 
+:pushpin: **Compute-optimal Setup**
+
+We provide the compute-optimal configurations for [ARM](/text/configs/model/optimal-ar.yaml), [MDM](/text/configs/model/optimal-mdm.yaml), and [MDM-Prime](/text/configs/model/optimal-prime.yaml). To use the compute-optimal training receipe, simply change `model` and `trainer.max_steps` (e.g., `model=optimal-ar trainer.max_steps=107000`) in the above commands as follows:
+
+|           | `model` | `trainer.max_steps` |
+| --------- | --------------- | ----------- |
+| ARM       | `optimal-ar`    | `107000`    |
+| MDM       | `optimal-mdm`   | `245000`    |
+| MDM-Prime | `optimal-prime` | `320000`    |
+
+
 ### Likelihood Evaluation
 
 :pushpin: **Perplexity**
 
-```
+Evaluate MDM-Prime ($\ell=2$) using the following command:
+```bash
 python -u -m main mode=ppl_eval eval.compute_zero_shot=True eval.generate_samples=False \
                   eval.checkpoint_path=${path_to_checkpoint} \
                   data=openwebtext-split data.cache_dir=/app/huggingface_cache \
@@ -164,17 +201,27 @@ python -u -m main mode=ppl_eval eval.compute_zero_shot=True eval.generate_sample
     - `mode`: `train` / `ppl_eval` / `sample_and_save`. (default: `train`)
     - `eval.checkpoint_path`: path to the checkpoint. (default: ` `)
 
+:new: Evaluate compute-optimal MDM-Prime-v2 ($\ell=16$) using the following command:
+```bash
+python -u -m main mode=ppl_eval eval.compute_zero_shot=True eval.generate_samples=False \
+                  eval.checkpoint_path=${path_to_checkpoint} \
+                  data=openwebtext-split data.cache_dir=/app/huggingface_cache \
+                  loader.batch_size=16 loader.eval_batch_size=16 model=optimal-prime \
+                  prime.target_length=16 prime.subtokenizer_type=baseb_shuffle \
+                  prime.permutation_file_path=/app/subtokenizer/perm/perm_1.0_65536.pt
+```
+
 ### Sampling
 
 :pushpin: **Unconditional Sampling**
 
-```
+```bash
 python -u -m main mode=sample_and_save eval.checkpoint_path=${path_to_checkpoint} \
                   sampling.split_size=100 sampling.steps=512 \
                   sampling.sampling_dir=/app/results_prime_l2_owt/samples \
                   sampling.sampling_dtype=fp64 sampling.nucleus_p=0.95 \
                   loader.eval_batch_size=25 model=small \
-                  prime.target_length=2 prime.carry_over=False
+                  prime.target_length=2
 ```
 
 - **Arguments:**
@@ -186,7 +233,7 @@ python -u -m main mode=sample_and_save eval.checkpoint_path=${path_to_checkpoint
 
 :pushpin: **Conditional Sampling**
 
-```
+```bash
 python -u -m main mode=sample_and_save eval.checkpoint_path=${path_to_checkpoint} \
                   sampling.split_size=100 sampling.steps=512 \
                   sampling.sampling_dir=/app/results_prime_l2_owt/samples \
@@ -194,7 +241,7 @@ python -u -m main mode=sample_and_save eval.checkpoint_path=${path_to_checkpoint
                   sampling.conditions=True sampling.prefix_len=35 \
                   data=openwebtext-split data.cache_dir=/app/huggingface_cache \
                   loader.eval_batch_size=25 model=small \
-                  prime.target_length=2 prime.carry_over=False
+                  prime.target_length=2
 ```
 
 - **Arguments:**
@@ -202,16 +249,16 @@ python -u -m main mode=sample_and_save eval.checkpoint_path=${path_to_checkpoint
     - `sampling.prefix_len`: length of the prefix text sequence. (default: `50`)
 
 
-## Pretrained Weights
+## Pretrained Weights and Wandb Logs
 
-The following table (click the toggle-down button) presents the pretrained weights of different configurations:
+The following table (click the toggle-down button) presents the pretrained MDM-Prime weights of different configurations:
 
 <details>
-<summary><strong>OpenWebText</strong> (OWT)</summary>
+<summary><strong>MDM-Prime</strong> (click to expand)</summary>
 
 | Dataset | Model | $\ell$ | `carry_over` | Weight | `${setup_dir}` |
 | ------- | ----- | ------ | ---------- | ---- | ---- |
-| `OWT`   | MDLM-Prime | 2 | False | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l2_owt/checkpoint.ckpt) | `results_prime_l2_owt` |
+| `OWT`   | MDM-Prime | 2 | False | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l2_owt/checkpoint.ckpt) | `results_prime_l2_owt` |
 |         |            |   | True  | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l2_co_owt/checkpoint.ckpt) | `results_prime_l2_co_owt` |
 |         |            | 3 | False | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l3_owt/checkpoint.ckpt) | `results_prime_l3_owt` |
 |         |            |   | True  | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l3_co_owt/checkpoint.ckpt) | `results_prime_l3_co_owt` |
@@ -224,23 +271,39 @@ The following table (click the toggle-down button) presents the pretrained weigh
 
 </details>
 
-We reproduced the results using this code implementaion. The results of MDLM-Prime ($\ell=4$) are slightly better (PPL=15.21) than those reported in the main manuscript. The training and evaluation curves are shown as follows:
+We reproduced the results using this code implementaion. The results of MDM-Prime ($\ell=4$) are slightly better (PPL=15.21) than those reported in the main manuscript. The training and evaluation curves are shown as follows:
 
 |<img src="assets/curves.png" alt="fid" width="800px">|
 |-|
 
 <details>
-<summary><strong>Reproduced Results</strong></summary>
+<summary><strong>MDM-Prime Reproduced Results</strong> (click to expand)</summary>
 
 | Dataset | Model | Weight | `${setup_dir}` |
 | ------- | ----- | ---- | ---- |
 | `OWT`   | ARM                   | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_ar_owt_reproduce/checkpoint.ckpt) | `results_ar_owt_reproduce` |
-|         | MDLM                  | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_mdm_owt_reproduce/checkpoint.ckpt) | `results_mdm_owt_reproduce` |
-|         | MDLM-Prime ($\ell=4$) | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l4_owt_reproduce/checkpoint.ckpt) | `results_prime_l4_owt_reproduce` |
+|         | MDM                  | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_mdm_owt_reproduce/checkpoint.ckpt) | `results_mdm_owt_reproduce` |
+|         | MDM-Prime ($\ell=4$) | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l4_owt_reproduce/checkpoint.ckpt) | `results_prime_l4_owt_reproduce` |
 
 </details>
 
-Click the toggle-down button :point_up: to access the weights of the reproduced results.
+:new: Find the following weights for MDM-Prime-v2 and compute-optimal models (ARM, MDM, MDM-Prime, and MDM-Prime-v2). Methods marked with $*$ are trained with a compute-optimal setup.
+
+<details>
+<summary><strong>MDM-Prime-v2</strong> (click to expand)</summary>
+
+| Dataset | Model | `non_shared_emb` | `sum_emb` | `chunk_point` | Weight | `${setup_dir}` |
+| ------- | ----- | ------ | ------------ | --------- | ------------- | -------------- |
+| `OWT`   | ARM $^*$                      | - | - | - | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_ar_opt_owt/checkpoint.ckpt) | `results_ar_opt_owt` |
+|         | MDM $^*$                      | - | - | - | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_mdm_opt_owt/checkpoint.ckpt) | `results_mdm_opt_owt` |
+|         | MDM-Prime $^*$ ($\ell=6$)     | False | False | 1.0 | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_l6_opt_owt/checkpoint.ckpt) | `results_prime_l6_opt_owt` |
+|         | MDM-Prime-v2 ($\ell=16$)      | False | False | 1.0 | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_v2_owt/checkpoint.ckpt) | `results_prime_v2_owt` |
+|         | MDM-Prime-v2 $^*$ ($\ell=16$) | False | False | 1.0 | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_v2_opt_owt/checkpoint.ckpt) | `results_prime_v2_opt_owt` |
+|         | MDM-Prime-v2 $^*$ ($\ell=16$) | True | True | 0.5 | [🤗 link](https://huggingface.co/chen-hao-chao/mdm-prime/blob/main/text/owt/results_prime_v2_opt_c05_owt/checkpoint.ckpt) | `results_prime_v2_opt_c05_owt` |
+
+</details>
+
+The above training curves are available in our Weights & Biases project: [lance_chao/owt-runs](https://wandb.ai/lance_chao/owt-runs). 
 
 <br>
 
@@ -248,28 +311,69 @@ Click the toggle-down button :point_up: to access the weights of the reproduced 
 
 Pass `checkpointing.from_huggingface=True` and set `eval.checkpoint_path=text/owt/${setup_dir}/checkpoint.ckpt` to download the checkpoint from our huggingface repository.
 
-**Example.** Evalute PPL using MDLM-Prime ($\ell=2$)
+**Example.** Evalute PPL using MDM-Prime ($\ell=2$)
 
 ```bash
 python -u -m main mode=ppl_eval eval.compute_zero_shot=False eval.generate_samples=False \
                   eval.checkpoint_path=text/owt/results_prime_l2_owt/checkpoint.ckpt \
                   data=openwebtext-split data.cache_dir=/app/huggingface_cache \
                   loader.batch_size=16 loader.eval_batch_size=16 model=small \
-                  prime.target_length=2 prime.carry_over=False \
+                  prime.target_length=2 \
                   checkpointing.from_huggingface=True
 ```
 
-**Example.** Sampling using MDLM-Prime ($\ell=2$)
+**Example.** :new: Evalute PPL using MDM-Prime-v2 ($\ell=16$). 
+
+- Select `results_prime_v2_opt_owt` or `results_prime_v2_opt_c05_owt` based on your application. We report the results of `results_prime_v2_opt_owt` (PPL=7.77) in our [main manuscript](https://arxiv.org/abs/2603.16077) but we suggest using `results_prime_v2_opt_c05_owt` (PPL=11.05), which generates samples with better quality.
+
+```bash
+python -u -m main mode=ppl_eval eval.compute_zero_shot=True eval.generate_samples=False \
+                  eval.checkpoint_path=text/owt/results_prime_v2_opt_owt/checkpoint.ckpt \
+                  data=openwebtext-split data.cache_dir=/app/huggingface_cache \
+                  loader.batch_size=16 loader.eval_batch_size=16 model=optimal-prime \
+                  prime.target_length=16 prime.subtokenizer_type=baseb_shuffle \
+                  prime.permutation_file_path=/app/subtokenizer/perm/perm_1.0_65536.pt \
+                  checkpointing.from_huggingface=True
+# or
+python -u -m main mode=ppl_eval eval.compute_zero_shot=True eval.generate_samples=False \
+                  eval.checkpoint_path=text/owt/results_prime_v2_opt_c05_owt/checkpoint.ckpt \
+                  data=openwebtext-split data.cache_dir=/app/huggingface_cache \
+                  loader.batch_size=16 loader.eval_batch_size=16 model=optimal-prime \
+                  prime.target_length=16 prime.subtokenizer_type=baseb_shuffle \
+                  prime.non_shared_emb=True prime.sum_emb=True \
+                  prime.permutation_file_path=/app/subtokenizer/perm/perm_1.0_65536.pt \
+                  checkpointing.from_huggingface=True
+```
+
+**Example.** Sampling using MDM-Prime ($\ell=2$)
 
 ```bash
 python -u -m main mode=sample_and_save eval.checkpoint_path=text/owt/results_prime_l2_owt/checkpoint.ckpt \
+                  data.cache_dir=/app/huggingface_cache \
                   sampling.split_size=10 sampling.steps=512 \
                   sampling.sampling_dir=/app/results_prime_l2_owt/samples \
                   sampling.sampling_dtype=fp64 sampling.nucleus_p=0.95 \
                   loader.eval_batch_size=10 model=small \
-                  prime.target_length=2 prime.carry_over=False \
+                  prime.target_length=2 \
                   checkpointing.from_huggingface=True
 ```
+
+**Example.** :new: Sampling using MDM-Prime-v2 ($\ell=16$)
+
+```bash
+python -u -m main mode=sample_and_save eval.checkpoint_path=text/owt/results_prime_v2_opt_c05_owt/checkpoint.ckpt \
+                  data.cache_dir=/app/huggingface_cache \
+                  sampling.split_size=10 sampling.steps=512 \
+                  sampling.sampling_dir=/app/results_prime_v2_opt_c05_owt/samples \
+                  sampling.sampling_dtype=fp64 \
+                  loader.eval_batch_size=10 model=optimal-prime \
+                  prime.target_length=16 prime.subtokenizer_type=baseb_shuffle \
+                  prime.non_shared_emb=True prime.sum_emb=True prime.chunk_point=0.0 \
+                  prime.permutation_file_path=/app/subtokenizer/perm/perm_1.0_65536.pt \
+                  checkpointing.from_huggingface=True
+```
+
+A generated example is available in [assets/prime_generated_sample.txt](/text/assets/prime_generated_sample.txt).
 
 :pushpin: **Manually Download the Pretrained Weights**
 
@@ -293,11 +397,16 @@ This code implementation is developed based on the following repository.
 Further changes based on the code in this folder are licensed under the `Apache-2.0` license.
 
 
-## Citing MDM-Prime
+## Citation
 
-If you find this code implementation useful, please consider citing our paper.
+If you find this code implementation useful, please consider citing our papers.
 
 ```bib
+@article{chao2026mdmprimev2,
+      title = {{MDM-Prime-v2: Binary Encoding and Index Shuffling Enable Compute-optimal Scaling of Diffusion Language Models}}, 
+      author = {Chen-Hao Chao, Wei-Fang Sun, Junwei Quan, Chun-Yi Lee, Rahul G. Krishnan},
+      year = {2026},
+}
 @inproceedings{chao2025mdmprime,
       title = {{Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking}}, 
       author = {Chen-Hao Chao, Wei-Fang Sun, Hanwen Liang, Chun-Yi Lee, Rahul G. Krishnan},

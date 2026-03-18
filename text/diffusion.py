@@ -21,7 +21,8 @@ from utils.eval_utils import compute_mauve
 from utils.noise_schedule import get_noise
 from utils.utils import create_extended_p_filter, encoder, decoder
 from utils.utils import convert_to_marginal_filter_logit
-
+from subtokenizer.layers import BasebLayer, BasebShufflingLayer
+import pdb
 LOG2 = math.log(2)
 
 def _sample_categorical(categorical_probs, dtype=torch.float32):
@@ -76,13 +77,23 @@ class Diffusion(L.LightningModule):
     self.sampling_dtype = torch.float32 if config.sampling.sampling_dtype == "fp32" else torch.float64
     self.test_eval_loader = None
     self.carry_over = config.prime.carry_over
+    self.subtokenizer_type = config.prime.subtokenizer_type
 
     if config.prime.target_length != 1:
       base = config.prime.base
       target_length = config.prime.target_length
       seq_length = config.prime.seq_length
-      self.wrapped_encoder = lambda x: encoder(x, base, target_length, seq_length)
-      self.wrapped_decoder = lambda x: decoder(x, base, target_length, seq_length)
+      if self.subtokenizer_type == 'baseb':
+        self.wrapped_encoder = BasebLayer(base=base, target_length=target_length)
+      elif self.subtokenizer_type == 'baseb_shuffle':
+        fname = config.prime.permutation_file_path
+        if os.path.exists(fname):
+          perm = torch.load(fname, map_location="cpu")
+          self.wrapped_encoder = BasebShufflingLayer(base=base, target_length=target_length, perm=perm, random_ratio=1.0)
+        else:
+          raise ValueError(f"Cannot find the permutation file.")
+      else:
+        raise ValueError(f"Cannot find the permutation file.")
       with torch.no_grad():
         extended_masks = create_extended_p_filter(lambda x, seq: encoder(x, base, target_length, seq),
                                                   C=config.prime.vocab_size, 
@@ -95,7 +106,6 @@ class Diffusion(L.LightningModule):
     else:
       self.marginalization_fn = None
       self.wrapped_encoder = None
-      self.wrapped_decoder = None
 
     # --------
     self.save_hyperparameters()
@@ -128,7 +138,9 @@ class Diffusion(L.LightningModule):
       self.backbone = models.dit.PerceiverDIT(self.config, 
                                               vocab_size=self.vocab_size, 
                                               target_length=self.config.prime.target_length, 
-                                              base=self.config.prime.base+1)
+                                              base=self.config.prime.base+1,
+                                              non_shared_emb=self.config.prime.non_shared_emb,
+                                              sum_emb=self.config.prime.sum_emb)
     elif self.config.backbone == 'dimamba':
       self.backbone = models.dimamba.DiMamba(self.config,
                                              vocab_size=self.vocab_size,
@@ -261,6 +273,9 @@ class Diffusion(L.LightningModule):
       checkpoint['sampler']['random_state'] = None
 
   def on_train_start(self):
+    # hc_indices = torch.load(f"/home/chchao0/scratch/mdm-prime-text/subtokenizer/gpt2_wte_l{self.config.prime.target_length}.pt")
+    # hc_indices = {k: v.cuda() for k, v in hc_indices.items()}
+    # self.wrapped_encoder = HCLayer(self.config.prime.base, self.config.prime.target_length, self.config.prime.vocab_size, hc_indices, self.device)
     if self.ema:
       self.ema.move_shadow_params_to_device(self.device)
     # Adapted from:
@@ -771,34 +786,28 @@ class Diffusion(L.LightningModule):
     copy_flag = (x != self.mask_index).to(x.dtype)
     return copy_flag * x + (1 - copy_flag) * _x
   
-  def _mdm_prime_update(self, x, t, dt, p_x0=None, return_x0=False):
+  def _mdm_prime_update(self, x, t, dt, p_x0=None):
     assert self.config.noise.type == 'loglinear'
     sigma_t, _ = self.noise(t)
-    if t.ndim > 1:
-      t = t.squeeze(-1)
-    assert t.ndim == 1
-    move_chance_t = t[:, None, None]
-    move_chance_s = (t - dt)[:, None, None]
-    assert move_chance_t.ndim == 3, move_chance_t.shape
     if p_x0 is None:
       p_x0 = torch.exp(self.forward(x, sigma_t))
       p_x0 = self._nucleus_sample(p_x0) # only apply when necleus_p != 1 (default)
-
-    assert move_chance_t.ndim == p_x0.ndim
-    
     _x0 = _sample_categorical(p_x0, dtype=self.sampling_dtype)
     _x_encoded = self.wrapped_encoder(_x0)
-    delta_x = F.one_hot(_x_encoded, num_classes=self.mask_index_enc + 1)
-    q_xs = delta_x * (move_chance_t - move_chance_s) # alpha_s - alpha_t
-    q_xs[:, :, self.mask_index_enc] = move_chance_s[:, :, 0] # 1 - alpha_s
-    _x = _sample_categorical(q_xs, dtype=self.sampling_dtype)
     
-    copy_flag = (x != self.mask_index_enc).to(x.dtype)
-    if return_x0: # for visualization
-      return p_x0, copy_flag * x + (1 - copy_flag) * _x, _x0
-    else:
-      return p_x0, copy_flag * x + (1 - copy_flag) * _x
-
+    B, L_l = _x_encoded.shape
+    assert (t == t[0]).all(), "Tensor elements are not identical!"
+    t = t[0].item()
+    chunk_ratio = self.config.prime.target_length if t > self.config.prime.chunk_point else 1
+    alpha_t = 1 - t
+    alpha_s = 1 - (t - dt)
+    is_mask = (x == self.mask_index_enc)
+    p_unmask = torch.full((B, L_l // chunk_ratio, 1), (alpha_s - alpha_t) / (1 - alpha_t + 1e-6), device=x.device)
+    unmask_indices = torch.rand(size=(B, L_l // chunk_ratio, 1), device=x.device) < p_unmask
+    unmask_indices = unmask_indices.expand(-1, -1, chunk_ratio).reshape(B, L_l)
+    flip_to_y0 = unmask_indices & is_mask
+    return p_x0, (~flip_to_y0) * x + flip_to_y0 * _x_encoded 
+    
   def _ar_sampler(self, bsz, conditions=None):
     # precompute token buffer
     x = torch.zeros((bsz, self.config.model.length *  self.config.prime.target_length), dtype=torch.long, device=self.device)
@@ -821,7 +830,7 @@ class Diffusion(L.LightningModule):
       x[:, i + indent] = y
 
     if self.config.prime.target_length != 1:
-      x = self.wrapped_decoder(x)
+      x = self.wrapped_encoder.inverse(x)
     return x
 
   @torch.no_grad()
@@ -888,7 +897,7 @@ class Diffusion(L.LightningModule):
           x[x == self.mask_index_enc] = _x[x == self.mask_index_enc] 
           
     if self.config.prime.target_length != 1:
-      x = self.wrapped_decoder(x)
+      x = self.wrapped_encoder.inverse(x)
 
     return x
 
@@ -1051,8 +1060,22 @@ class Diffusion(L.LightningModule):
       move_chance = 1 - torch.exp(-sigma[:, None])
 
     if self.config.prime.target_length != 1:
+      # When self.config.prime.chunk_point == 1.0, Lines 1087-1098 should output exactly the same xt as that calculated by:
+      # x0_enc = self.wrapped_encoder(x0)
+      # xt = self.q_xt(x0_enc, move_chance)
+      
       x0_enc = self.wrapped_encoder(x0)
-      xt = self.q_xt(x0_enc, move_chance)
+      B, L_l = x0_enc.shape
+      p_mask = (1 - 1e-6) * t + 1e-6
+      chunk_ratio_scheduler = lambda t: torch.where(t > self.config.prime.chunk_point, self.config.prime.target_length, 1)
+      batch_ratios = torch.tensor([chunk_ratio_scheduler(val) for val in t], device=x0.device).view(B, 1)
+      base_indices = torch.arange(L_l, device=x0.device).unsqueeze(0)
+      gather_indices = base_indices.div(batch_ratios, rounding_mode='floor')
+      raw_noise = torch.rand((B, L_l), device=x0.device)
+      correlated_noise = torch.gather(raw_noise, dim=1, index=gather_indices)
+      p_mask_expand = p_mask.view(B, 1)
+      mask_indices = correlated_noise < p_mask_expand
+      xt = torch.where(mask_indices, self.mask_index_enc, x0_enc)
     else:
       xt = self.q_xt(x0, move_chance)
 
@@ -1228,4 +1251,5 @@ class Diffusion(L.LightningModule):
   @torch.no_grad
   def calculate_mauve_score(self):
     return 0
+  
   
