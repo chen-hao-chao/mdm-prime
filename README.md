@@ -11,23 +11,6 @@
 <a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a>
 <a href="https://x.com/chenhao_chao/status/1935699633654931464"><img src="https://img.shields.io/badge/MDM_Prime-black.svg?logo=X" alt="MDM-Prime on X"/></a><br>
 
-## ⚠️ Notice: Perplexity Evaluation Error
-
-We have identified a serious error in the perplexity evaluation results. Please see our [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/) for more details. A corrected implementation will be released soon.
-
-#### What remains valid
-
-The following results are unaffected and the code can still be used to reproduce them:
-
-- Claims about idle steps (Fig. 1)
-- Sample quality comparisons (Tables 3, 4)
-
-#### What is affected
-
-The NLL results for MDM-Prime (Tables 1, 2) do not represent a real improvement and may be overestimated.
-
-We apologize for any inconvenience this may cause.
-
 ## What’s Inside
 
 This repository contains the code implementation of the experiments presented in the paper [*Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking*](https://arxiv.org/abs/2505.18495).
@@ -42,7 +25,8 @@ This repository contains the code implementation of the experiments presented in
 
 
 ## News
-- :notebook: **[May 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current NLL/Perplexity evaluation is incorrect.
+- :pencil2: **[May 7, 2026]** Released correct implementation of perplexity evaluation. (see [mdm-prime/text](/text))
+- :notebook: **[May 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current perplexity evaluation is incorrect.
 - 📅 **[Mar 17, 2026]** Released [MDM-Prime-v2](https://arxiv.org/abs/2603.16077). Check out the implementation in [mdm-prime/text](/text).
 - 🎉 **[Sep 18, 2025]** Our paper has been accepted to NeurIPS 2025.
 
@@ -66,6 +50,24 @@ This repository contains the code implementation of the experiments presented in
 - **Folder**: [mdm-prime/image](/image)
 - <details> <summary> <strong>Demo</strong> (click me) </summary> <img src="image/assets/img_demo.gif" alt="prime_img" width="800px"> </details>
 
+
+## Notice: Perplexity Evaluation Correction 
+
+We identified an error in the perplexity evaluation results in our [paper](https://arxiv.org/abs/2505.18495). Please see our [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/) for more details.
+
+#### What remains valid
+
+The following results are unaffected and the code can still be used to reproduce them:
+
+- Claims about idle steps (Fig. 1)
+- Sample quality comparisons (Tables 3, 4)
+
+#### What is affected
+
+The perplexity results in Tables 1, 2 do not represent a real improvement. Please see our corrected results in [mdm-prime/text](/text).
+
+We apologize for any inconvenience this may cause.
+
 ## License
 This code implementation is developed based on the following repositories.
 
@@ -80,6 +82,12 @@ Further changes based on this repository are licensed under the `Apache-2.0` and
 If you find this code implementation useful, please consider citing our paper.
 
 ```bib
+@article{chao2026dependency,
+      title   = {{Dependency Breaks Validity of Loss Functions in Masked Diffusion Models}},
+      author  = {Chao, Chen-Hao and Xu, Minkai and Geffner, Tomas and Vahdat, Arash and Krishnan, Rahul G.},
+      journal = {chen-hao-chao.github.io},
+      year    = {2026}
+}
 @inproceedings{chao2025mdmprime,
       title = {{Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking}}, 
       author = {Chen-Hao Chao, Wei-Fang Sun, Hanwen Liang, Chun-Yi Lee, Rahul G. Krishnan},

@@ -19,13 +19,12 @@ from utils.eval_utils import compute_generative_perplexity, compute_entropy
 from utils.eval_utils import compute_mauve, compute_self_bleu, compute_ngram_repetition_percentage
 from huggingface_hub import hf_hub_download
 
-import sys
-import transformers.models.gpt2.tokenization_gpt2 as gpt2_legacy
-# 1. Alias the missing module path to the existing one
-sys.modules['transformers.models.gpt2.tokenization_gpt2_fast'] = gpt2_legacy
-# 2. Ensure the 'Fast' class is accessible where the checkpoint expects it
+# Compatibility workaround for older transformers versions - no longer needed with transformers 4.57.6+
+# import sys
+# import transformers.models.gpt2.tokenization_gpt2 as gpt2_legacy
+# sys.modules['transformers.models.gpt2.tokenization_gpt2_fast'] = gpt2_legacy
 from transformers import GPT2TokenizerFast
-gpt2_legacy.GPT2TokenizerFast = GPT2TokenizerFast
+# gpt2_legacy.GPT2TokenizerFast = GPT2TokenizerFast
 
 omegaconf.OmegaConf.register_new_resolver(
   'cwd', os.getcwd)

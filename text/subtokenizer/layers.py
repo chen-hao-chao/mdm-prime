@@ -34,6 +34,28 @@ class BasebLayer(torch.nn.Module):
         y = y.view(B, L, self.target_length)
         x = (y * self.mask.to(y.dtype)).sum(dim=-1)
         return x
+    
+    def marginalization_mask(self, y, vocab_size=None):
+        """
+        Build a boolean mask for marginalizing softmax distributions.
+
+        Args:
+            y: (B, L * target_length) integer tensor of base-b digits.
+            vocab_size: if provided, truncate the mask to this size along the V
+                        dimension (for when vocab_size < base ** target_length).
+
+        Returns:
+            mask: (B, L * target_length, V) boolean tensor.
+                  mask[b, l*target_length + j, v] is True iff the j-th digit of state v
+                  equals y[b, l*target_length + j].
+        """
+        B, Lt = y.shape
+        L = Lt // self.target_length
+        lookup = self.lookup_table[:vocab_size] if vocab_size is not None else self.lookup_table
+        y_reshaped = y.view(B, L, self.target_length)
+        mask = y_reshaped.unsqueeze(-1) == lookup.T.unsqueeze(0).unsqueeze(0)
+        mask = mask.reshape(B, Lt, -1)
+        return mask
 
 class BasebShufflingLayer(torch.nn.Module):
     def __init__(self, base, target_length, perm=None, random_ratio: float = 1.0) -> None:
@@ -140,3 +162,26 @@ class BasebShufflingLayer(torch.nn.Module):
         x = self.inv_perm[x_perm]  # [B*L]
 
         return x.view(B, L)
+    
+    def marginalization_mask(self, y, vocab_size=None):
+        """
+        Build a boolean mask for marginalizing softmax distributions,
+        accounting for the permutation applied in forward().
+
+        Args:
+            y: (B, L * target_length) integer tensor of base-b digits.
+            vocab_size: if provided, truncate the mask to this size along the V
+                        dimension (for when vocab_size < base ** target_length).
+
+        Returns:
+            mask: (B, L * target_length, V) boolean tensor.
+                  mask[b, i, v] is True iff the digit at position i of perm[v]
+                  matches y[b, i].
+        """
+        B, Lt = y.shape
+        L = Lt // self.target_length
+        y_reshaped = y.view(B, L, self.target_length)
+        shuffled_lookup = self.lookup_table[self.perm[:vocab_size]] if vocab_size is not None else self.lookup_table[self.perm]
+        mask = y_reshaped.unsqueeze(-1) == shuffled_lookup.T.unsqueeze(0).unsqueeze(0)
+        mask = mask.reshape(B, Lt, -1)
+        return mask

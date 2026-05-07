@@ -222,6 +222,21 @@ class Diffusion(L.LightningModule):
     if self.subs_masking:
       assert self.parameterization == 'd3pm'
 
+  def load_state_dict(self, state_dict, strict=True):
+    # Handle backward compatibility: old checkpoints don't have wrapped_encoder
+    if self.wrapped_encoder is not None:
+      missing_encoder_keys = []
+      for key in list(self.state_dict().keys()):
+        if key.startswith('wrapped_encoder.') and key not in state_dict:
+          missing_encoder_keys.append(key)
+
+      if missing_encoder_keys:
+        # wrapped_encoder is missing from checkpoint - it's already initialized in __init__
+        # so just skip loading it (use non-strict mode for these keys)
+        strict = False
+
+    return super().load_state_dict(state_dict, strict=strict)
+  
   def on_load_checkpoint(self, checkpoint):
     if self.ema:
       self.ema.load_state_dict(checkpoint['ema'])
@@ -1102,7 +1117,27 @@ class Diffusion(L.LightningModule):
       x0[x0 >= self.vocab_size] = self.tokenizer.eos_token_id
 
     # SUBS parameterization, continuous time.
-    log_p_theta = torch.gather(input=model_output, dim=-1, index=x0[:, :, None]).squeeze(-1)
+    if self.config.prime.target_length != 1 and self.config.prime.marginalize:
+      tl = self.config.prime.target_length
+      marginalization_masks = self.wrapped_encoder.marginalization_mask(x0_enc, vocab_size=self.vocab_size)  # (B, L*tl, V)
+      p_theta = model_output.exp()  # (B, L, V)
+      # Expand p_theta from (B, L, V) to (B, L*tl, V): each token shares its distribution across tl sub-positions
+      B_mg, L_mg, V_mg = p_theta.shape
+      p_theta = p_theta.unsqueeze(2).expand(B_mg, L_mg, tl, V_mg).reshape(B_mg, L_mg * tl, V_mg)
+      marginal_probs = (p_theta * marginalization_masks).sum(dim=-1)  # (B, L*tl)
+      # For unmasked positions, set to 1 so log gives 0 (no contribution)
+      marginal_probs = marginal_probs.masked_fill(xt != self.mask_index_enc, 1.0)
+      B_mg, Lt_mg = marginal_probs.shape
+      L_mg = Lt_mg // self.config.prime.target_length
+      log_p_theta = marginal_probs.log().view(B_mg, L_mg, self.config.prime.target_length).sum(dim=-1)  # (B, L)
+    else:
+      log_p_theta = torch.gather(input=model_output, dim=-1, index=x0[:, :, None]).squeeze(-1)
+      # Zero out log_p_theta for token locations where not all subtokens are masked
+      B_lp, L_l_lp = xt.shape
+      L_lp = L_l_lp // self.config.prime.target_length
+      xt_reshaped = xt.view(B_lp, L_lp, self.config.prime.target_length)
+      all_masked = (xt_reshaped == self.mask_index_enc).all(dim=-1)  # (B, L)
+      log_p_theta = log_p_theta * all_masked
     if self.change_of_variables or self.importance_sampling:
       return log_p_theta * torch.log1p(
         - torch.exp(- self.noise.sigma_min))
