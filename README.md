@@ -42,7 +42,7 @@ This repository contains the code implementation of the experiments presented in
 
 
 ## News
-- :notebook: **[Mar 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current NLL/Perplexity evaluation is incorrect.
+- :notebook: **[May 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current NLL/Perplexity evaluation is incorrect.
 - 📅 **[Mar 17, 2026]** Released [MDM-Prime-v2](https://arxiv.org/abs/2603.16077). Check out the implementation in [mdm-prime/text](/text).
 - 🎉 **[Sep 18, 2025]** Our paper has been accepted to NeurIPS 2025.
 
