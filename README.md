@@ -11,6 +11,23 @@
 <a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a>
 <a href="https://x.com/chenhao_chao/status/1935699633654931464"><img src="https://img.shields.io/badge/MDM_Prime-black.svg?logo=X" alt="MDM-Prime on X"/></a><br>
 
+## ⚠️ Notice: Perplexity Evaluation Error
+
+We have identified a serious error in the perplexity evaluation results. Please see our [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/) for more details. A corrected implementation will be released soon.
+
+#### What remains valid
+
+The following results are unaffected and the code can still be used to reproduce them:
+
+- Claims about idle steps (Fig. 1)
+- Sample quality comparisons (Tables 3, 4)
+
+#### What is affected
+
+The NLL results for MDM-Prime (Tables 1, 2) do not represent a real improvement and may be overestimated.
+
+We apologize for any inconvenience this may cause.
+
 ## What’s Inside
 
 This repository contains the code implementation of the experiments presented in the paper [*Beyond Masked and Unmasked: Discrete Diffusion Models via Partial Masking*](https://arxiv.org/abs/2505.18495).
@@ -25,6 +42,7 @@ This repository contains the code implementation of the experiments presented in
 
 
 ## News
+- :notebook: **[Mar 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current NLL/Perplexity evaluation is incorrect.
 - 📅 **[Mar 17, 2026]** Released [MDM-Prime-v2](https://arxiv.org/abs/2603.16077). Check out the implementation in [mdm-prime/text](/text).
 - 🎉 **[Sep 18, 2025]** Our paper has been accepted to NeurIPS 2025.
 
