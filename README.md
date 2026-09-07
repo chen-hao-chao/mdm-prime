@@ -25,10 +25,11 @@ This repository contains the code implementation of the experiments presented in
 
 
 ## News
+- :rocket: **[Aug 20, 2026]** [MDM-Prime-v2](https://github.com/chen-hao-chao/mdm-prime-v2) has been accepted to **EMNLP 2026 (Main)**.
 - :pencil2: **[May 7, 2026]** Released correct implementation of perplexity evaluation. (see [mdm-prime/text](/text))
 - :notebook: **[May 1, 2026]** Released [errata note](https://chen-hao-chao.github.io/dependency-breaks-validity/). The current perplexity evaluation is incorrect.
 - 📅 **[Mar 17, 2026]** Released [MDM-Prime-v2](https://arxiv.org/abs/2603.16077). Check out the implementation in [mdm-prime/text](/text).
-- 🎉 **[Sep 18, 2025]** Our paper has been accepted to NeurIPS 2025.
+- 🎉 **[Sep 18, 2025]** Our paper has been accepted to **NeurIPS 2025**.
 
 
 ## Overview
