@@ -258,8 +258,7 @@
         <p>The work proposes <strong>MDM-Prime</strong>, an enhanced masked diffusion model (MDM) incorporating a <strong><u>P</u>a<u>r</u>t<u>i</u>al <u>m</u>asking schem<u>e</u> (Prime)</strong>
           that introduces intermediate token states between masked and unmasked representations. 
           By enabling a fine-grained denoising process and improving model utilization, MDM-Prime achieves superior performance 
-          on both text (perplexity 15.36 on OpenWebText) and image generation (FID 3.26 on CIFAR-10; 6.98 on ImageNet-32), 
-          outperforming prior MDM and autoregressive models.</p>
+          on text and image generation.</p>
       </div><br>
     </div>
     <p id="title" class="has-text-centered"><img src="./static/images/title.png" style="width:60%;"/><br><br><br><br><br><br>
@@ -326,15 +325,6 @@
           reflected in the reduced number of idle steps in <a href="#Fig2">Fig. 2</a> (i.e., the purple curves). 
           This in turn leads to <strong>enhanced performance</strong>, as later presented in the experiment section. The contributions 
           of this work are as follows:</p>
-
-          <ul>
-            <li><strong>(Objective)</strong> We propose MDM-Prime, a generalized MDM framework that enables intermediate token transitions. This framework can be optimized through a variational upper bound, which approximates the negative log-likelihood.</li>
-            <li><strong>(Architecture)</strong> We present a simple implementation of MDM-Prime built upon the standard MDM architecture. Our design requires only minor modifications to the input embedding layer of the standard MDM.</li>
-            <li><strong>(Performance)</strong> We demonstrate that MDM-Prime achieves superior performance on both image and text generation tasks. On OpenWebText (OWT), MDM-Prime attains an evaluation perplexity of 15.36, 
-              outperforming ARM (17.54), MDM (21.52), and their hybrid variants (17.58). To the best of our knowledge, this is the <strong>first MDM-based approach to surpass ARM</strong> without relying on the autoregressive 
-              formulation. Furthermore, MDM-Prime achieves FID scores of 3.26 on CIFAR-10 and 6.98 on ImageNet-32, showing competitive performance comparable to leading 
-              continuous generative modeling methods.</li>
-          </ul>
       </div>
     </div>
 </section>
@@ -435,14 +425,13 @@
           many recent works <a href="#Ref2">[2-4]</a> choose to model $p(\vx_0|\vx_t)$ using $p_\theta(\vx_0|\vx_t)$, 
           where $\theta$ denotes the model parameters. To facilitate computational efficiency, this distribution is 
           typically factorized as $p_\theta(\vx_0|\vx_t)=\prod_{i=1}^L p_\theta (x_0^i|\vx_t)$ <a href="#Ref1">[1-7]</a>. 
-          The parameter $\theta$ can be optimized by estimating the negative log-likelihood $-\log p_\theta(\vx_0)$ using 
-          a variational upper bound, written as <a href="#Ref3">[3,4]</a>:
+          The parameter $\theta$ can be optimized by minimizing a weighted cross-entropy loss, written as <a href="#Ref3">[3,4]</a>:
         </p>
         <p class="has-text-centered">$$
           \begin{equation}
           \label{eq:diffusion_elbo}
           \begin{aligned}
-              \mathcal{L}_\text{vb}(\vx_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vx_t|\vx_0)}\left[\sum_{i=1}^L \log p_\theta (x_0^i|\vx_t) \right] dt,
+              \mathcal{L}(\vx_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vx_t|\vx_0)}\left[\sum_{i=1}^L \log p_\theta (x_0^i|\vx_t) \right] dt,
           \end{aligned}
           \end{equation}
         $$</p>
@@ -502,32 +491,22 @@
           of intermediate states during the element-wise masking of the forward diffusion process (see <a href="#Fig4">Fig. 4</a>). 
           Given a target length $\ell>1$, this can be achieved through an <strong>invertible function</strong> $f$, 
           which maps each token $x^i_0 \in \XX$ to its base-$b$ encoding $\vy^i_0 \in \YY^\ell$.</p>
-
-        <!-- <p>The invertibility of $f$ enables the likelihood to be defined on the set of sub-tokens $\YY$. 
-          For convenience, we slightly abuse notation and extend $f$ to accept vector inputs: 
-          $f(\vx_0)\triangleq [f(x^1_0), \cdots, f(x^L_0)]=[\vy^1_0,\cdots,\vy^L_0]=[(y^{1,1}_0,\cdots,y^{1,\ell}_0),\cdots,(y^{L,1}_0,\cdots,y^{L,\ell}_0)]=\vy_0$. 
-          Its inverse is denoted as $f^{-1}$. Under this transformation, the pmf of the data, 
-          $p_{\text{data}}(\vx_0)$, can be equivalently written as $p_{\text{data}} \circ f^{-1}(\vy_0)$ 
-          according to the change-of-variable principle. Rather than directly modeling $\vx_0$, we model 
-          $\vy_0$ through MDM, and reconstruct $\vx_0$ using $f^{-1}(\vy_0)$, 
-          resulting in a parameterized pmf $p_\theta(\vy_0)=p_\theta \circ f(\vx_0)$.</p> -->
         
         <p>To learn $p_\theta(\vy_0)$ using MDM, each data point $\vx_0$ is first transformed into $\vy_0 = f(\vx_0)$, 
           and its corresponding latent variable $\vy_t$ is sampled from $q(\vy_{t}|\vy_0)=\prod_{i=1}^L\prod_{j=1}^{\ell} q(y_{t}^{i,j}|y^{i,j}_0)$ 
           according to Eq. (<a style="color: blue;">\ref{eq:kernel_t0}</a>) by substituting $x$'s with $y$'s. 
           The reverse diffusion process is parameterized by $p_\theta(\vy_0 | \vy_t)=\prod_{i=1}^L p_\theta(\vy_0^i| \vy_t)$, 
-          and the model is trained to minimize the loss $\mathcal{L}_{\text{vb}}(\vy_0; \theta)$ as in 
+          and the model is trained to minimize the loss $\mathcal{L}(\vy_0; \theta)$ as in 
           Eq. (<a style="color: blue;">\ref{eq:diffusion_elbo}</a>):</p>
         <p class="has-text-centered">$$
           \begin{equation}
           \label{eq:prime_elbo}
           \begin{aligned}
-              \mathcal{L}_\text{vb}(\vy_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vy_t|\vy_0)}\left[\sum_{i=1}^{L}  \log p_\theta(\vy^{i}_0|\vy_{t}) \right] dt.
+              \mathcal{L}(\vy_0;\theta)=\int_0^1 \frac{\alpha'_t}{1-\alpha_t} \mathbb{E}_{q(\vy_t|\vy_0)}\left[\sum_{i=1}^{L}  \log p_\theta(\vy^{i}_0|\vy_{t}) \right] dt.
           \end{aligned}
           \end{equation}
         $$</p>
-        <p><a href="https://arxiv.org/abs/2505.18495">Our paper</a> shows that Eq. (<a style="color: blue;">\ref{eq:prime_elbo}</a>) 
-          defines a <strong>variational bound</strong> that approximates negative log-likelihood (NLL), and that the number of idle 
+        <p><a href="https://arxiv.org/abs/2505.18495">Our paper</a> shows that the number of idle 
           steps decreases as $\ell$ increases, which guarantees an <strong>improved model utilization</strong> of MDM-Prime during the 
           reverse diffusion process.
         </p>
@@ -628,78 +607,88 @@
       <div class="content has-text-justified scroll-wrapper">
         <p>This section presents empirical evaluations to examine the effectiveness of the proposed method.</p><br>
         <h4 class="title">Text Generation</h4>
-        <p>&#9654<b> Configuration:</b> In this set of experiments, models are trained on the OpenWebText (OWT) dataset. 
-          The text data are tokenized using the GPT-2 tokenizer, which defines $L = 1,024$ and $C = 50,257$. 
-          The Masked Diffusion Language Model (MDLM) <a href="#Ref3">[3]</a> is adopted as our baseline, and the experimental setup 
-          is consistent with <a href="#Ref3">[3]</a>. Prime with different $\ell$ is applied to enhance it, 
-          and our method is denoted as MDLM-Prime. We also include comparisons with several recent approaches
-          <a href="#Ref1">[1,3,4,6,8]</a>.</p>
+        <p>Models are trained on OpenWebText (OWT), tokenized with the GPT-2 tokenizer.
+          We adopt MDLM <a href="#Ref3">[3]</a> as our baseline, apply Prime with varying $\ell$ to obtain MDLM-Prime.</p>
         <br>
         <p id="Fig7" class="has-text-justified" style="font-style: italic;"><img src="./static/images/text_demo.gif" style="width: 85%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
           <b>Figure 7.</b> Visualization of the sampling processes of ARM, MDLM, and MDLM-Prime. The masked ratio is measured on a
           per-token basis, with higher values indicated by darker shades of blue. The samples are generated
           with prefix and suffix texts sourced from an <a href="https://timesofindia.indiatimes.com/life-style/books/features/10-timeless-poems-by-rabindranath-tagore/amp_etphotostory/75593222.cms">online article</a> 
           describing Rabindranath Tagore’s poems.</p>
-        <br>
-        <div class="columns is-mobile is-centered">
-          <div class="column is-two-thirds">
-            <p>&#9654<b> Improvements to Likelihood Evaluation:</b> We evaluate the models’ ability to capture the data distribution 
-              using the <strong>perplexity (PPL)</strong> metric. <a href="#Tab1">Table 1</a> reports PPL on OWT, 
-              along with the <strong>idle step ratio (ISR)</strong>, which is defined as the proportion of idle steps relative to the total sampling steps. 
-              We observe that as $\ell$ increases, MDLM-Prime achieves lower PPL, with performance converging when 
-              $\ell \geq 4$. Since ISR also converges when $\ell \geq 4$, this trend suggests that ISR can serve as an indicator of <strong>improved 
-              likelihood modeling ability</strong>. Moreover, MDLM-Prime with $\ell \geq 3$ outperforms ARM, 
-              MDM-based approaches <a href="#Ref1">[1,3,4,6]</a>, and their hybrid variant <a href="#Ref6">[6,8]</a> 
-              by a noticeable margin in terms of PPL, indicating that incorporating intermediate state representations allows MDLM-Prime 
-              to model data likelihood more effectively. Instead of following recent approaches <a href="#Ref6">[6,8]</a> 
-              that leverage an autoregressive formulation to enhance MDM performance, MDLM-Prime maintains an <strong>order-agnostic</strong>
-              framework while achieving superior performance on textual data.</p>
-          </div>
-          <div class="column is-one-thirds">
-            <p id="Tab1" class="has-text-justified" style="font-style: italic;"><img src="./static/images/ppl.png" style="width: 100%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
-              <b>Table 1.</b> Evaluation on OWT. Methods marked with * involve autoregression.</p>
-          </div>
-        </div>
-
-        <p>&#9654<b> Improvements to Generalizability to Unseen Text Data:</b> With the models trained on OWT, we then examine their 
-          generalizability to unseen textual datasets. To assess the models’ generalizability across diverse text domains, we report 
-          PPL on a suite of commonly used zero-shot benchmarks, including LAMBADA, WikiText, Penn Treebank (PTB), 1 Billion Word 
-          Benchmark (LM1B), AG News, and Scientific Papers (PubMed and ArXiv subsets). The results are reported in <a href="#Tab2">Table 2</a>. 
-          MDLM-Prime exhibits superior results on LAMBADA, PTB, and ArXiv, and achieves 
-          comparable performance to ARM on WikiText. While it underperforms ARM on AG News, the overall results highlight 
-          its <strong>superior generalizability</strong> across multiple domains. Furthermore, the ablation study in Appendix A.5.1 of <a href="https://arxiv.org/abs/2505.18495">our paper</a>
-          reveals that the carry-over parameterization plays an important role in enhancing zero-shot performance, offering improvements on both LAMBADA and PubMed.</p>
-        <p id="Tab2" class="has-text-justified" style="font-style: italic;"><img src="./static/images/zeroshot.png" style="width: 80%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -15pt;"></br>
-          <b>Table 2.</b> Zero-shot perplexities evaluated on seven textual datasets. Lower values correspond to better performance. Methods marked with * incorporate an autoregressive formulation. MDLM-Prime exhibits improved results on LAMBADA, PTB, and ArXiv.</p>
 
         <br>
         <h4 class="title">Image Generation</h4>
-        <p>&#9654<b> Configuration:</b> In this set of experiments, models are trained and evaluated on the CIFAR-10 
-          and ImageNet-32 datasets. For both datasets, the dimensionality is set to $L=32\times 32 \times 3$,
-          with $C = 256$ corresponding to pixel intensity values. The core model architecture is adapted from
-          the ablated diffusion model (ADM) <a href="#Ref9">[9]</a>, which is the same as that used in <a href="#Ref7">[7]</a>. Sample quality
-          is evaluated using the widely adopted Fréchet Inception Distance (FID) and Inception Score (IS) metrics.</p>
+        <p>Models are trained and evaluated on CIFAR-10 and ImageNet-32 ($L=32\times 32 \times 3$,
+          $C = 256$ pixel intensities), using the ablated diffusion model (ADM) architecture <a href="#Ref9">[9]</a>, as in
+          <a href="#Ref7">[7]</a>. Sample quality is evaluated using FID and IS.</p>
         <br>
         <p id="Fig8" class="has-text-centered" style="font-style: italic;"><img src="./static/images/img_demo.gif" style="width: 90%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
           <b>Figure 8.</b> CIFAR-10 samples generated by MDM-Prime with NFE=512.</p>
         <br>
-        <p>&#9654<b> Improvements to Sample Quality:</b> The benchmark results are reported in <a href="#Tab3">Table 3</a>, 
-          which include two baselines, MDM and MDM-Mixture, as well as several existing 
-          generative modeling approaches. The MDM baseline corresponds to the standard configuration with $\ell = 1$, 
-          while MDM-Mixture extends this baseline by incorporating a mixture distribution using an auxiliary variable, 
-          similar to <a href="#Ref10">[10]</a>. In this comparison, MDM-Prime adopts $\ell = 2$.</p>
-
-        <p>As shown in the tables, MDM and MDM-Mixture are inferior to MDM-Prime. On CIFAR-10, MDM-Prime achieves better 
-          results than the other discrete generative models while requiring fewer NFE, and attains performance comparable 
-          to StyleGAN+ADA <a href="#Ref11">[11]</a>. On ImageNet-32, MDM-Prime demonstrates improved performance over 
-          existing continuous diffusion and score-based models, achieving an FID improvement of 1.36 over 
-          ScoreFlow (VP) <a href="#Ref12">[12]</a>.</p>
+        <p>&#9654<b> Improvements to Sample Quality:</b> <a href="#Tab1">Table 1</a> compares MDM-Prime ($\ell = 2$) against two
+          baselines, MDM ($\ell = 1$) and MDM-Mixture (a mixture-distribution extension via an auxiliary variable, similar to
+          <a href="#Ref10">[10]</a>), as well as several existing generative models. MDM-Prime outperforms both MDM baselines,
+          matches StyleGAN+ADA <a href="#Ref11">[11]</a> on CIFAR-10 with fewer NFE, and improves over ScoreFlow (VP)
+          <a href="#Ref12">[12]</a> on ImageNet-32 by an FID of 1.36.</p>
         
         <div class="column is-one-thirds">
-          <p id="Tab3" class="has-text-justified" style="font-style: italic;"><img src="./static/images/fid.png" style="width: 82%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
-            <b>Table 3.</b> FID and IS evaluation on CIFAR-10 and ImageNet-32. The arrow symbols $\uparrow$ / $\downarrow$ represent that higher / lower
+          <p id="Tab1" class="has-text-justified" style="font-style: italic;"><img src="./static/images/fid.png" style="width: 82%; display: block; margin-left: auto; margin-right: auto; margin-bottom: -10pt;"></br>
+            <b>Table 1.</b> FID and IS evaluation on CIFAR-10 and ImageNet-32. The arrow symbols $\uparrow$ / $\downarrow$ represent that higher / lower
             results correspond to better performance.</p>
         </div>
+
+      </div>
+    </div>
+</section>
+
+<section class="section" id="Resources">
+  <div class="container is-max-desktop">
+    <h2 class="title" style="text-indent: -0.35em;">Related Resources</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified scroll-wrapper">
+
+        <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <h4 class="title" style="margin: 0;">MDM-Prime-v2</h4>
+          <span class="link-block">
+            <a href="https://chen-hao-chao.github.io/mdm-prime-v2/"
+               class="external-link button is-small is-rounded is-dark" style="text-decoration: none;">
+              <span class="icon"><i class="fas fa-globe"></i></span>
+              <span>website</span>
+            </a>
+          </span>
+          <span class="link-block">
+            <a href="https://arxiv.org/abs/2603.16077"
+               class="external-link button is-small is-rounded is-dark" style="text-decoration: none;">
+              <span class="icon"><i class="ai ai-arxiv"></i></span>
+              <span>arXiv</span>
+            </a>
+          </span>
+          <span class="link-block">
+            <a href="https://github.com/chen-hao-chao/mdm-prime-v2"
+               class="external-link button is-small is-rounded is-dark" style="text-decoration: none;">
+              <span class="icon"><i class="fab fa-github"></i></span>
+              <span>github</span>
+            </a>
+          </span>
+        </div>
+        <p>MDM-Prime-v2 introduces principled subtokenizers, index shuffling and binary encoding,
+          implemented as zero-FLOP lookup tables during data preprocessing. Trained at 1.1B parameters on 540B SlimPajama tokens,
+          it achieves 49.42% average accuracy on eight commonsense reasoning benchmarks, improving over the MDM baseline (SMDM)
+          by 4.87 points.</p>
+        <br>
+
+        <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <h4 class="title" style="margin: 0;">Errata Note</h4>
+          <span class="link-block">
+            <a href="https://chen-hao-chao.github.io/dependency-breaks-validity/"
+               class="external-link button is-small is-rounded is-dark" style="text-decoration: none;">
+              <span class="icon"><i class="fas fa-globe"></i></span>
+              <span>website</span>
+            </a>
+          </span>
+        </div>
+        <p>The MDM-Prime paper reports that the model exhibits more favorable NLL than MDM and other diffusion models. The training objective used in
+          this comparison, however, is not an evidence lower bound (ELBO). We discuss this issue and its implications in a dedicated errata note. A corrected version has been implemented in our Github repo <a href="https://github.com/chen-hao-chao/mdm-prime">chen-hao-chao/mdm-prime</a>.</p>
 
       </div>
     </div>
