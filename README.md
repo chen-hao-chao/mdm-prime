@@ -8,8 +8,9 @@
 <a href="https://arxiv.org/abs/2505.18495"><img src="https://img.shields.io/badge/arXiv-2505.18495-b31b1b.svg?logo=arxiv&logoColor=red" alt="MDM-Prime Paper on arXiv"/></a>
 <a href="https://huggingface.co/chen-hao-chao/mdm-prime"><img src="https://img.shields.io/badge/🤗_HuggingFace%20-MDM_Prime%20-orange" alt="MDM-Prime on Hugging Face"/></a>
 <a href="https://hub.docker.com/r/chenhaochao/mdm-prime"><img src="https://img.shields.io/badge/dockerhub-MDM_Prime-blue.svg?logo=docker" alt="MDM-Prime on Docker"/></a>
-<a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a>
-<a href="https://x.com/chenhao_chao/status/1935699633654931464"><img src="https://img.shields.io/badge/MDM_Prime-black.svg?logo=X" alt="MDM-Prime on X"/></a><br>
+<a href="https://hub.docker.com/r/chenhaochao/mdlm-prime"><img src="https://img.shields.io/badge/dockerhub-MDLM_Prime-blue.svg?logo=docker" alt="MDLM-Prime on Docker"/></a><br>
+<a href="https://chen-hao-chao.github.io/mdm-prime/"><img src="https://img.shields.io/badge/🌐_Website-MDM_Prime-599eb3" alt="MDM-Prime Website"/></a>
+<a href="https://x.com/chenhao_chao/status/1935699633654931464"><img src="https://img.shields.io/badge/MDM_Prime-black.svg?logo=X" alt="MDM-Prime on X"/></a>
 
 ## What’s Inside
 
